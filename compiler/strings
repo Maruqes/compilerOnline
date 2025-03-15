@@ -1,0 +1,77 @@
+func allocMem1PageString(dd pge){
+    dd page = pge * 4096;
+    asm(mov32 eax 192);
+    asm(mov32 ebx 0);
+    asm(mov32 ecx page);
+    asm(mov32 edx 3);
+    asm(mov32 esi 34);
+    asm(mov32 edi -1);
+    asm(syscall);
+    return;
+}
+
+func createString(){
+    asm(pusha);
+    dd page1 = allocMem1PageString(2);
+    asm(popa);
+    return page1;
+}
+
+func setLetter(dd addr, dd offset, db letter, dw letter2){
+
+    if letter2 = 65535{
+        return 0;
+    }
+
+    asm(mov32 ecx addr);
+    asm(mov8 bl letter);
+    asm(mov32 eax offset);
+    asm(mov8_mr_r ecx eax bl);
+
+    return 0;
+}
+
+
+func getStringLen(dd addr){
+    dd len = 0;
+
+    while 1 = 1{
+
+        db letter = 0;
+        
+        asm(mov32 ebx 0);
+        asm(mov32 ecx addr);
+        asm(mov32 eax len);
+        asm(mov8_r_mr bl ecx eax);
+        asm(mov8 letter bl);
+
+        if letter = 0 {
+            return len;
+        }
+        len = len + 1;
+    }
+
+    return len;
+}
+
+func printString(dd addr){
+
+    dd len = getStringLen(addr);
+
+    asm(mov32 ecx addr);
+    asm(mov32 ebx 1);
+    asm(mov32 edx len);
+    asm(mov32 eax 4);
+    asm(syscall);
+    return 0;
+}
+
+func printStringLen(dd addr, dd len){
+
+    asm(mov32 ecx addr);
+    asm(mov32 ebx 1);
+    asm(mov32 edx len);
+    asm(mov32 eax 4);
+    asm(syscall);
+    return 0;
+}
