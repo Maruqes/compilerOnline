@@ -20,12 +20,35 @@
         #editor {
             height: 70vh;
         }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #4f46e5 0%, #7e22ce 100%);
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.1), 0 8px 10px -6px rgba(79, 70, 229, 0.1);
+        }
     </style>
 </head>
 
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
-    <header class="bg-indigo-700 text-white text-2xl font-semibold p-4 text-center shadow">
-        Online Compiler
+    <header class="gradient-bg text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Online Compiler</h1>
+            <a href="https://github.com/Maruqes/compiler" target="_blank"
+                class="flex items-center gap-2 bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                    <path
+                        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+                </svg>
+                View on GitHub
+            </a>
+        </div>
     </header>
 
     <main class="container mx-auto flex flex-col gap-6 p-4 flex-grow">
@@ -33,11 +56,18 @@
         <div class="flex flex-col md:flex-row gap-4">
             <!-- Editor zone (¾) -->
             <section class="flex flex-col gap-4 md:w-3/4 w-full">
-                <div id="fileTabs" class="flex gap-2 text-sm"></div>
-                <div id="editor" class="border border-slate-700 rounded shadow"></div>
+                <div id="fileTabs" class="flex gap-2 text-sm overflow-x-auto pb-1"></div>
+                <div id="editor" class="border border-slate-700 rounded-lg shadow-lg"></div>
                 <form id="compileForm" class="flex gap-2">
                     <button type="submit"
-                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-500 transition">Compile</button>
+                        class="px-4 py-2 gradient-bg text-white rounded-lg shadow hover:opacity-90 transition flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            viewBox="0 0 16 16">
+                            <path
+                                d="M6 12.796V3.204L11.481 8 6 12.796zm.659.753 5.48-4.796a1 1 0 0 0 0-1.506L6.66 2.451C6.011 1.885 5 2.345 5 3.204v9.592a1 1 0 0 0 1.659.753z" />
+                        </svg>
+                        Compile
+                    </button>
                     <span id="status" class="self-center text-gray-300"></span>
                 </form>
             </section>
@@ -45,7 +75,7 @@
             <!-- Output (¼) -->
             <section class="md:w-1/4 w-full">
                 <pre id="output"
-                    class="bg-black text-green-300 p-4 rounded whitespace-pre overflow-auto h-full md:min-h-[70vh]"></pre>
+                    class="bg-slate-950 text-green-300 p-4 rounded-lg shadow-lg whitespace-pre overflow-auto h-[70vh] md:min-h-[70vh]"></pre>
             </section>
         </div>
 
@@ -53,10 +83,10 @@
         <!-- Code Examples Grid -->
         <section class="mt-6">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="font-semibold text-xl text-indigo-300">Code Examples</h2>
+                <h2 class="font-bold text-xl text-indigo-300">Code Examples</h2>
                 <div class="relative">
                     <input id="snippetSearch" type="text" placeholder="Search examples..."
-                        class="bg-slate-700 text-slate-200 px-4 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-indigo-500 w-64">
+                        class="bg-slate-800 text-slate-200 px-4 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-indigo-500 w-64 shadow-sm">
                     <div class="absolute right-3 top-2.5 text-slate-400">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                             viewBox="0 0 16 16">
@@ -67,7 +97,7 @@
                 </div>
             </div>
 
-            <div class="mb-4 bg-slate-800 p-2 rounded-lg overflow-x-auto">
+            <div class="mb-4 bg-slate-800 p-2 rounded-lg overflow-x-auto shadow-md">
                 <div id="categoryTabs" class="flex gap-2 text-sm"></div>
             </div>
 
@@ -75,8 +105,9 @@
 
             <!-- Preview Modal -->
             <div id="previewModal"
-                class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
-                <div class="bg-slate-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+                class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                <div
+                    class="bg-slate-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col border border-slate-700">
                     <div class="flex justify-between items-center p-4 border-b border-slate-700">
                         <h3 id="previewTitle" class="text-xl font-semibold text-indigo-300"></h3>
                         <button id="closePreviewBtn" class="text-slate-400 hover:text-white">
@@ -102,8 +133,8 @@
                             </svg>
                             Copy
                         </button>
-                        <!-- <button id="loadPreviewBtn"
-                            class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500 transition flex items-center gap-2">
+                        <button id="loadPreviewBtn"
+                            class="px-4 py-2 gradient-bg text-white rounded hover:opacity-90 transition flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                 viewBox="0 0 16 16">
                                 <path
@@ -112,19 +143,172 @@
                                     d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z" />
                             </svg>
                             Load to Editor
-                        </button> -->
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Working Code Section -->
+        <section class="mt-12">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="font-bold text-xl text-indigo-300">Working Code Examples</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="workingCodeGrid">
+                <!-- Calculator Card -->
+                <div
+                    class="bg-slate-800 rounded-lg shadow-lg border border-slate-700 overflow-hidden hover:shadow-indigo-900/20 transition card-hover">
+                    <div class="p-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-lg font-semibold text-indigo-400">Calculator</h3>
+                            <span class="text-xs px-2 py-1 rounded-full bg-green-600/30 text-green-300">Complete
+                                App</span>
+                        </div>
+                        <p class="text-slate-300 mb-4">A fully functional calculator example that demonstrates function
+                            calls, conditionals, and string operations.</p>
+                        <div class="flex justify-end gap-2">
+                            <button
+                                class="px-4 py-2 bg-slate-700 text-white rounded hover:bg-slate-600 transition flex items-center gap-2 view-working-code"
+                                data-code-id="calculator">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+                                    <path
+                                        d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+                                </svg>
+                                View Code
+                            </button>
+                            <button
+                                class="px-4 py-2 gradient-bg text-white rounded hover:opacity-90 transition flex items-center gap-2 load-working-code"
+                                data-code-id="calculator">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z" />
+                                    <path
+                                        d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z" />
+                                </svg>
+                                Load to Editor
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Temperature Converter Card -->
+                <div
+                    class="bg-slate-800 rounded-lg shadow-lg border border-slate-700 overflow-hidden hover:shadow-indigo-900/20 transition card-hover">
+                    <div class="p-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-lg font-semibold text-indigo-400">Temperature Converter</h3>
+                            <span class="text-xs px-2 py-1 rounded-full bg-green-600/30 text-green-300">Utility</span>
+                        </div>
+                        <p class="text-slate-300 mb-4">A simple temperature converter that transforms Celsius to
+                            Fahrenheit using floating point operations.</p>
+                        <div class="flex justify-end gap-2">
+                            <button
+                                class="px-4 py-2 bg-slate-700 text-white rounded hover:bg-slate-600 transition flex items-center gap-2 view-working-code"
+                                data-code-id="tempConverter">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+                                    <path
+                                        d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" />
+                                </svg>
+                                View Code
+                            </button>
+                            <button
+                                class="px-4 py-2 gradient-bg text-white rounded hover:opacity-90 transition flex items-center gap-2 load-working-code"
+                                data-code-id="tempConverter">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z" />
+                                    <path
+                                        d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z" />
+                                </svg>
+                                Load to Editor
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Working Code Preview Modal -->
+            <div id="workingCodeModal"
+                class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                <div
+                    class="bg-slate-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col border border-slate-700">
+                    <div class="flex justify-between items-center p-4 border-b border-slate-700">
+                        <h3 id="workingCodeTitle" class="text-xl font-semibold text-indigo-300"></h3>
+                        <button id="closeWorkingCodeBtn" class="text-slate-400 hover:text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+                        </button>
+                    </div>
+                    <div class="p-4 overflow-auto flex-grow">
+                        <pre id="workingCodeContent"
+                            class="language-c rounded bg-slate-900 p-4 max-h-[80vh] overflow-auto"><code></code></pre>
+                    </div>
+                    <div class="p-4 border-t border-slate-700 flex justify-end gap-3">
+                        <button id="copyWorkingCodeBtn"
+                            class="px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-500 transition flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
+                                <path
+                                    d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
+                            </svg>
+                            Copy
+                        </button>
+                        <button id="loadWorkingCodeBtn"
+                            class="px-4 py-2 gradient-bg text-white rounded hover:opacity-90 transition flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z" />
+                                <path
+                                    d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z" />
+                            </svg>
+                            Load to Editor
+                        </button>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
+    <footer class="mt-8 py-4 border-t border-slate-800">
+        <div class="container mx-auto text-center text-slate-500 text-sm">
+            <p class="mt-1">
+                <a href="https://github.com/Maruqes/compiler" class="text-indigo-400 hover:text-indigo-300 transition"
+                    target="_blank">
+                    View Compiler Source on GitHub
+                </a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Toast notification -->
+    <div id="toast"
+        class="fixed bottom-5 right-5 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg transform transition-all duration-300 translate-y-20 opacity-0 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"
+            class="flex-shrink-0">
+            <path
+                d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
+        </svg>
+        <span id="toastMessage"></span>
+    </div>
+
     <script>
         /* ---------- highlight.js ---------- */
         function addAndHighlight(code, title, category) {
             const grid = document.getElementById("snippetGrid");
             const card = document.createElement("div");
-            card.className = "bg-slate-800 rounded-lg shadow-lg hover:shadow-indigo-900/20 transition overflow-hidden border border-slate-700 group snippet-card";
+            card.className = "bg-slate-800 rounded-lg shadow-lg hover:shadow-indigo-900/20 transition overflow-hidden border border-slate-700 group snippet-card card-hover";
             card.dataset.category = category;
             card.dataset.title = title.toLowerCase();
             card.dataset.code = code;
@@ -140,19 +324,26 @@
                 <div class="p-4 flex flex-col h-full">
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="text-indigo-400 font-semibold">${title}</h3>
-                        <span class="text-xs px-2 py-1 rounded-full bg-slate-700 text-slate-300">${category}</span>
+                        <span class="text-xs px-2 py-1 rounded-full bg-indigo-600/30 text-indigo-300">${category}</span>
                     </div>
                     <div class="flex-grow">
                         <pre class="text-sm overflow-hidden max-h-48"><code class="language-c">${previewLines.replaceAll("<", "&lt;")}</code></pre>
                     </div>
                     <div class="mt-3 flex justify-end gap-2 opacity-80 group-hover:opacity-100 transition">
-                        <button class="snippet-copy-btn px-2 py-1 bg-slate-700 text-xs rounded hover:bg-slate-600 transition" title="Copy code">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <button class="snippet-copy-btn px-2 py-1 bg-slate-700 text-xs rounded hover:bg-slate-600 transition flex items-center gap-1" title="Copy code">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
                                 <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
                             </svg>
+                            Copy
                         </button>
-                        <button class="snippet-preview-btn px-2 py-1 bg-indigo-600 text-xs rounded hover:bg-indigo-500 transition">View Details</button>
+                        <button class="snippet-preview-btn px-2 py-1 gradient-bg text-xs rounded hover:opacity-90 transition flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+                                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
+                            </svg>
+                            View
+                        </button>
                     </div>
                 </div>
             `;
@@ -203,6 +394,9 @@
             "Pointers": [
                 { title: "test_deaddressing", code: `func test_deaddressing(){\n    dd a = 10;\n    dd*b = &a;\n    dd*c = &b;\n    dd*d = &c;\n    return ***d;\n}` }
             ],
+            "Floating Point": [
+                { title: "float_operations", code: `func float_operations(){\n    dd teste = 65;\n    if teste = 65 {\n        dd valor1 = CFloat(3.0);\n        dd valor2 = CFloat(3.0);\n        \n        dd testeFloat = floatAdd(valor1, valor2);\n        dd testeFconvert = convertFloatToInt(testeFloat);\n        \n        dd testeMul = floatMul(valor1, valor2);\n        dd testeSub = floatSub(testeMul, valor1);\n        dd testeDiv = floatDiv(testeMul, valor1);\n        dd testeIntToFloat = convertIntToFloat(testeFconvert);\n\n\n        if testeFconvert = 6 {\n            if testeMul = CFloat(9.0) {\n                if testeSub = CFloat(6.0) {\n                    if testeDiv = CFloat(3.0) {\n                        if testeIntToFloat = floatAdd(CFloat(3.0), CFloat(3.0)) {\n                            return 350;\n                        }\n                    }\n                }\n            }\n        }\n    }\n    return 0;\n}` }
+            ],
             "Logical Operators": [
                 { title: "test_gates", code: `func test_gates(){\n    dd a = 0;\n    dd b = 5;\n    if a < 10 & b > 0 {\n        a = a + 1;\n    }\n    while a < 10 & b < 15 {\n        a = a + 1;\n        b = b + 1;\n    }\n    for dd j = 0; j < 10 && a < 100; j++;{\n        a = a + 1;\n    }\n    if a < 10 | 0 = 0 {\n        a = a + 1;\n    }\n    return a + b;\n}` },
                 { title: "test_and_only", code: `func test_and_only(){\n    dd a = 5;\n    dd b = 7;\n    dd c = 0;\n    if a < 10 & b > 0 {\n        c = 1;\n    }\n    return c;\n}` },
@@ -211,7 +405,8 @@
                 { title: "test_or_true", code: `func test_or_true(){\n    dd a = 5;\n    dd b = 2;\n    dd c = 0;\n    if a > 10 | b > 0 {\n        c = 1;\n    }\n    return c;\n}` },
                 { title: "test_precedence", code: `func test_precedence(){\n    dd a = 5;\n    dd b = 10;\n    dd c = 0;\n    if a < 10 & b = 10 | a = 5 {\n        c = 1;\n    }\n    return c;\n}` },
                 { title: "test_simple_gate1", code: `func test_simple_gate1(){\n    dd a = 0;\n    if 1=1 & 1=1 | 1=0 {\n        a = 100;\n    }\n    return a;\n}` },
-                { title: "testeNot", code: `func testeNot(){\n    dd a = 0;\n    if not(a) = xFFFFFFFF {\n        a = 10;\n    }\n    return a;\n}` }
+                { title: "testeNot", code: `func testeNot(){\n    dd a = 0;\n    if not(a) = xFFFFFFFF {\n        a = 10;\n    }\n    return a;\n}` },
+                { title: "operators_example", code: `func operators_example(){\n    dd a = 1 + 1; // sum\n    dd b = 1 - 1; // sub\n    dd c = 1 * 1; // mul\n    dd d = 1 / 1; // div\n    dd e = 1 % 1; // mod\n    dd f = 1 = 1; // equal\n    dd g = 1 ! 1; // not equal\n    dd h = 1 < 1; // less than\n    dd i = 1 > 1; // greater than\n\n    dd j = 1 & 1; // and\n    dd k = 1 | 1; // or\n    dd l = 1 ^ 1; // xor\n    dd m = ~1; // not\n\n    dd n = 1 [ 1; // shift left\n    dd o = 1 ] 1; // shift right\n    \n    return a + b + c + d;\n}` }
             ],
             "Recursion": [
                 { title: "testRecursion", code: `func testRecursion(db a){\n    if a < 10 {\n        a = a + 1;\n        return testRecursion(a);\n    }\n    return a;\n}` }
@@ -221,7 +416,7 @@
         /* ---------- Build and populate categories ---------- */
         function buildCategoryTabs() {
             const tabsEl = document.getElementById("categoryTabs");
-            tabsEl.innerHTML = `<button class="category-tab px-3 py-1.5 rounded bg-indigo-600 text-white" data-category="all">All</button>`;
+            tabsEl.innerHTML = `<button class="category-tab px-3 py-1.5 rounded gradient-bg text-white" data-category="all">All</button>`;
 
             // Add a tab for each category
             Object.keys(snippetCategories).forEach(category => {
@@ -237,11 +432,11 @@
                 tab.addEventListener('click', () => {
                     // Update active state
                     document.querySelectorAll('.category-tab').forEach(t => {
-                        t.classList.remove('bg-indigo-600');
+                        t.classList.remove('gradient-bg');
                         t.classList.add('bg-slate-700');
                     });
                     tab.classList.remove('bg-slate-700');
-                    tab.classList.add('bg-indigo-600');
+                    tab.classList.add('gradient-bg');
 
                     // Filter snippets
                     filterSnippets();
@@ -274,13 +469,6 @@
             modal.classList.remove('hidden');
             document.body.classList.add('overflow-hidden');
 
-            // Set up the run button
-            document.getElementById('runPreviewBtn').onclick = () => {
-                editor.setValue(code);
-                document.getElementById('compileForm').dispatchEvent(new Event('submit'));
-                closePreview();
-            };
-
             // Set up the copy button
             document.getElementById('copyPreviewBtn').onclick = () => {
                 copyToClipboard(code);
@@ -309,18 +497,11 @@
         function showToast(message) {
             // Create toast if it doesn't exist
             let toast = document.getElementById('toast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'toast';
-                toast.className = 'fixed bottom-5 right-5 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-20 opacity-0';
-                document.body.appendChild(toast);
-            }
+            const messageEl = document.getElementById('toastMessage');
 
             // Set message and show
-            toast.textContent = message;
-            setTimeout(() => {
-                toast.classList.remove('translate-y-20', 'opacity-0');
-            }, 10);
+            messageEl.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
 
             // Hide after delay
             setTimeout(() => {
@@ -330,7 +511,8 @@
 
         function filterSnippets() {
             const searchText = document.getElementById('snippetSearch').value.toLowerCase();
-            const activeCategory = document.querySelector('.category-tab.bg-indigo-600').dataset.category;
+            // Fix: Look for gradient-bg instead of bg-indigo-600
+            const activeCategory = document.querySelector('.category-tab.gradient-bg').dataset.category;
 
             document.querySelectorAll('.snippet-card').forEach(card => {
                 const titleMatch = card.dataset.title.includes(searchText);
@@ -372,11 +554,50 @@
         /* ---------- In-memory files for editing ---------- */
         const files = {
             "main": `include "arrays"\ninclude "strings"\ninclude "floats"\n\nfunc main(){\n    return 0;\n}`,
-            "arrays": `// arrays library demo\nfunc arrayLen(arr){ /* ... */ }`,
-            "strings": `// strings library demo\nfunc strlen(s){ /* ... */ }`,
-            "floats": `// floats library demo\nfunc addf(a, b){ /* ... */ }`,
+            "arrays": `// Loading arrays library...`,
+            "strings": `// Loading strings library...`,
+            "floats": `// Loading floats library...`,
         };
         let currentFile = "main";
+
+        /* ---------- Toggle compile button visibility ---------- */
+        function toggleCompileButton() {
+            const compileForm = document.getElementById("compileForm");
+            if (currentFile === "main") {
+                compileForm.classList.remove("hidden");
+            } else {
+                compileForm.classList.add("hidden");
+            }
+        }
+
+        /* ---------- Fetch library files ---------- */
+        async function fetchLibraryFiles() {
+            try {
+                const libraryFiles = ["arrays", "strings", "floats"];
+                const statusEl = document.getElementById("status");
+
+                statusEl.textContent = "Loading library files...";
+
+                for (const file of libraryFiles) {
+                    const response = await fetch(`/api/${file}`);
+                    if (!response.ok) {
+                        throw new Error(`Failed to load ${file} library`);
+                    }
+                    files[file] = await response.text();
+                }
+
+                statusEl.textContent = "Libraries loaded";
+
+                // Update editor if it's currently showing one of these files
+                if (editor && libraryFiles.includes(currentFile)) {
+                    editor.setValue(files[currentFile]);
+                }
+            } catch (error) {
+                console.error("Error loading library files:", error);
+                document.getElementById("status").textContent = "Error loading libraries";
+                showToast("Failed to load library files");
+            }
+        }
 
         /* ---------- Monaco ---------- */
         require.config({ paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.47.0/min/vs" } });
@@ -394,7 +615,14 @@
                 minimap: { enabled: false },
             });
 
+            // Add change event listener to update files object when content changes
+            editor.onDidChangeModelContent(() => {
+                files[currentFile] = editor.getValue();
+            });
+
             buildTabs();
+            // Fetch library files after initializing editor
+            fetchLibraryFiles();
         });
 
         /* ---------- Build Tabs ---------- */
@@ -404,8 +632,8 @@
             Object.keys(files).forEach(fname => {
                 const btn = document.createElement("button");
                 btn.textContent = fname;
-                btn.className = `${fname === currentFile ? "bg-indigo-600" : "bg-slate-800 hover:bg-slate-700"} px-3 py-1 rounded`;
-                btn.onclick = () => { currentFile = fname; editor.setValue(files[fname]); buildTabs(); };
+                btn.className = `${fname === currentFile ? "gradient-bg" : "bg-slate-800 hover:bg-slate-700"} px-3 py-1 rounded`;
+                btn.onclick = () => { currentFile = fname; editor.setValue(files[fname]); buildTabs(); toggleCompileButton(); };
                 tabsEl.appendChild(btn);
             });
         }
@@ -432,6 +660,164 @@
                 statusEl.textContent = "⚠️ error";
             }
         });
+
+        /* ---------- Initial calls ---------- */
+        toggleCompileButton(); // Initial call to set compile button visibility
+
+        /* ---------- Working Code Examples ---------- */
+        // Define working code examples
+        const workingCodeExamples = {
+            "calculator": {
+                title: "Calculator",
+                description: "A fully functional calculator example that demonstrates function calls, conditionals, and string operations.",
+                code: `include "arrays"
+include "strings"
+include "floats"
+
+func calculator(dd input1, dd input2, dd op){
+    dd result = 0;
+
+	if op = '+' {
+		result = input1 + input2;
+	} elif op = '-' {
+		result = input1 - input2;
+	} elif op = '*' {
+		result = input1 * input2;
+	} elif op = '/' {
+		result = input1 / input2;
+	} else {
+		printString(CString("Operacao invalida!\\n"));
+	}
+
+    return result;
+}
+
+
+func main(){
+	printString(CString("Calculadora: + - * /\\n"));
+
+	dd op = '+';
+
+	dd input1 = 3;
+	dd input2 = 7;
+
+	dd result = calculator(input1, input2, op);
+
+	dd resultString = allocMemPage(1); //creates string by allocation memory
+	convertNumberToString(result, resultString);
+	printLine(resultString);
+
+
+	printString(CString("End of tests!\\n"));
+	return 0;
+}`,
+                tags: ["Complete App"]
+            },
+            "tempConverter": {
+                title: "Temperature Converter",
+                description: "A simple temperature converter that transforms Celsius to Fahrenheit using floating point operations.",
+                code: `include "arrays"
+include "strings"
+include "floats"
+
+func main(){
+    dd celsius = CFloat(4.0);
+    dd fahrenheit = floatMul(celsius, CFloat(1.8));
+    fahrenheit = floatAdd(fahrenheit, CFloat(32.0));
+
+    dd testeFconvert = convertFloatToInt(fahrenheit);
+    printNumber(testeFconvert); //there is not a way to print floats
+    return 0;
+}`,
+                tags: ["Utility"]
+            }
+        };
+
+        // Set up working code example interactions
+        function setupWorkingCodeExamples() {
+            // View Code buttons
+            document.querySelectorAll('.view-working-code').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const codeId = btn.dataset.codeId;
+                    const example = workingCodeExamples[codeId];
+                    if (example) {
+                        showWorkingCodePreview(example.title, example.code);
+                    }
+                });
+            });
+
+            // Load Code buttons
+            document.querySelectorAll('.load-working-code').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const codeId = btn.dataset.codeId;
+                    const example = workingCodeExamples[codeId];
+                    if (example) {
+                        // Load to main editor and switch to main tab
+                        currentFile = "main";
+                        editor.setValue(example.code);
+                        files[currentFile] = example.code;
+                        buildTabs();
+                        toggleCompileButton();
+                        showToast(`${example.title} code loaded to editor`);
+                    }
+                });
+            });
+
+            // Working code modal controls
+            const modal = document.getElementById('workingCodeModal');
+            const closeBtn = document.getElementById('closeWorkingCodeBtn');
+            const copyBtn = document.getElementById('copyWorkingCodeBtn');
+            const loadBtn = document.getElementById('loadWorkingCodeBtn');
+
+            closeBtn.addEventListener('click', () => {
+                modal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            });
+
+            copyBtn.addEventListener('click', () => {
+                const codeContent = document.getElementById('workingCodeContent').querySelector('code').textContent;
+                copyToClipboard(codeContent);
+                showToast("Code copied!");
+            });
+
+            loadBtn.addEventListener('click', () => {
+                const codeContent = document.getElementById('workingCodeContent').querySelector('code').textContent;
+                // Load to main editor and switch to main tab
+                currentFile = "main";
+                editor.setValue(codeContent);
+                files[currentFile] = codeContent;
+                buildTabs();
+                toggleCompileButton();
+                modal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+                showToast("Code loaded to editor");
+            });
+
+            // Close modal when clicking outside
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                    document.body.classList.remove('overflow-hidden');
+                }
+            });
+        }
+
+        // Show working code preview modal
+        function showWorkingCodePreview(title, code) {
+            const modal = document.getElementById('workingCodeModal');
+            const titleEl = document.getElementById('workingCodeTitle');
+            const codeEl = document.getElementById('workingCodeContent').querySelector('code');
+
+            titleEl.textContent = title;
+            codeEl.textContent = code;
+            hljs.highlightElement(codeEl);
+
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        // Initialize working code examples
+        setupWorkingCodeExamples();
     </script>
 </body>
 
