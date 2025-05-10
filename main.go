@@ -28,7 +28,7 @@ func createFile(code string) (string, error) {
 		return "", err
 	}
 
-	// Retorna apenas o nome base do ficheiro.
+	// Returns only the base filename
 	return filepath.Base(tmpFile.Name()), nil
 }
 
@@ -135,6 +135,18 @@ func compileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(output))
 }
 
+func serveFile(filename string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, err := os.ReadFile(filepath.Join("compilerFile", filename))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error reading file: %v", err), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write(data)
+	}
+}
+
 func main() {
 	const envFile = ".env"
 
@@ -152,9 +164,15 @@ func main() {
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello, World!"))
+		http.ServeFile(w, r, "index.html")
 	})
 	http.HandleFunc("/compile", compileHandler)
+
+	// New endpoints for serving the library files
+	http.HandleFunc("/api/floats", serveFile("floats"))
+	http.HandleFunc("/api/strings", serveFile("strings"))
+	http.HandleFunc("/api/arrays", serveFile("arrays"))
+
 	addr := ":" + port
 	log.Printf("Server starting on %s...", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))

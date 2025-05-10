@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Online Compiler</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Monaco Editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.47.0/min/vs/loader.min.js"></script>
+
+    <!-- highlight.js -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+
+    <style>
+        #editor {
+            height: 70vh;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+    <header class="bg-indigo-700 text-white text-2xl font-semibold p-4 text-center shadow">
+        Online Compiler
+    </header>
+
+    <main class="container mx-auto flex flex-col gap-6 p-4 flex-grow">
+        <!-- FLEX TOP: editor + output -->
+        <div class="flex flex-col md:flex-row gap-4">
+            <!-- Editor zone (¾) -->
+            <section class="flex flex-col gap-4 md:w-3/4 w-full">
+                <div id="fileTabs" class="flex gap-2 text-sm"></div>
+                <div id="editor" class="border border-slate-700 rounded shadow"></div>
+                <form id="compileForm" class="flex gap-2">
+                    <button type="submit"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-500 transition">Compile</button>
+                    <span id="status" class="self-center text-gray-300"></span>
+                </form>
+            </section>
+
+            <!-- Output (¼) -->
+            <section class="md:w-1/4 w-full">
+                <pre id="output"
+                    class="bg-black text-green-300 p-4 rounded whitespace-pre overflow-auto h-full md:min-h-[70vh]"></pre>
+            </section>
+        </div>
+
+        <!-- GRID de Exemplos -->
+        <!-- Code Examples Grid -->
+        <section class="mt-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="font-semibold text-xl text-indigo-300">Code Examples</h2>
+                <div class="relative">
+                    <input id="snippetSearch" type="text" placeholder="Search examples..."
+                        class="bg-slate-700 text-slate-200 px-4 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-indigo-500 w-64">
+                    <div class="absolute right-3 top-2.5 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            viewBox="0 0 16 16">
+                            <path
+                                d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4 bg-slate-800 p-2 rounded-lg overflow-x-auto">
+                <div id="categoryTabs" class="flex gap-2 text-sm"></div>
+            </div>
+
+            <div id="snippetGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+            <!-- Preview Modal -->
+            <div id="previewModal"
+                class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+                <div class="bg-slate-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+                    <div class="flex justify-between items-center p-4 border-b border-slate-700">
+                        <h3 id="previewTitle" class="text-xl font-semibold text-indigo-300"></h3>
+                        <button id="closePreviewBtn" class="text-slate-400 hover:text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+                        </button>
+                    </div>
+                    <div class="p-4 overflow-auto flex-grow">
+                        <pre id="previewCode"
+                            class="language-c rounded bg-slate-900 p-4 max-h-[80vh] overflow-auto"><code></code></pre>
+                    </div>
+                    <div class="p-4 border-t border-slate-700 flex justify-end gap-3">
+                        <button id="copyPreviewBtn"
+                            class="px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-500 transition flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z" />
+                                <path
+                                    d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
+                            </svg>
+                            Copy
+                        </button>
+                        <!-- <button id="loadPreviewBtn"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500 transition flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z" />
+                                <path
+                                    d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z" />
+                            </svg>
+                            Load to Editor
+                        </button> -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        /* ---------- highlight.js ---------- */
+        function addAndHighlight(code, title, category) {
+            const grid = document.getElementById("snippetGrid");
+            const card = document.createElement("div");
+            card.className = "bg-slate-800 rounded-lg shadow-lg hover:shadow-indigo-900/20 transition overflow-hidden border border-slate-700 group snippet-card";
+            card.dataset.category = category;
+            card.dataset.title = title.toLowerCase();
+            card.dataset.code = code;
+
+            // Set the maximum number of lines to show in the preview
+            const maxPreviewLines = 12;
+
+            // Create a truncated version of the code for the card preview
+            const previewLines = code.split('\n').slice(0, maxPreviewLines).join('\n') +
+                (code.split('\n').length > maxPreviewLines ? '\n...' : '');
+
+            card.innerHTML = `
+                <div class="p-4 flex flex-col h-full">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-indigo-400 font-semibold">${title}</h3>
+                        <span class="text-xs px-2 py-1 rounded-full bg-slate-700 text-slate-300">${category}</span>
+                    </div>
+                    <div class="flex-grow">
+                        <pre class="text-sm overflow-hidden max-h-48"><code class="language-c">${previewLines.replaceAll("<", "&lt;")}</code></pre>
+                    </div>
+                    <div class="mt-3 flex justify-end gap-2 opacity-80 group-hover:opacity-100 transition">
+                        <button class="snippet-copy-btn px-2 py-1 bg-slate-700 text-xs rounded hover:bg-slate-600 transition" title="Copy code">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z" />
+                            </svg>
+                        </button>
+                        <button class="snippet-preview-btn px-2 py-1 bg-indigo-600 text-xs rounded hover:bg-indigo-500 transition">View Details</button>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+            hljs.highlightElement(card.querySelector("code"));
+
+            // Add click event for preview
+            card.querySelector(".snippet-preview-btn").addEventListener("click", () => {
+                showPreview(title, code, category);
+            });
+
+            // Add click event for quick copy
+            card.querySelector(".snippet-copy-btn").addEventListener("click", (e) => {
+                e.stopPropagation();
+                copyToClipboard(code);
+                showToast("Code copied!");
+            });
+
+            // Make entire card clickable for preview
+            card.addEventListener("click", () => {
+                showPreview(title, code, category);
+            });
+        }
+
+        /* ---------- Snippet categories and list ---------- */
+        const snippetCategories = {
+            "Structures": [
+                { title: "struct myOwn", code: `struct myOwn{\n    dd a;\n    dd b;\n}\n\nfunc main(){\n    return 0;\n}` }
+            ],
+            "Basic Functions": [
+                { title: "test", code: `func test(){\n    return 10;\n}` },
+                { title: "test_params", code: `func test_params(db a, db b, db c, dw d, db e){\n    return a + b + c + d + e;\n}` }
+            ],
+            "Loops": [
+                { title: "test_whiles", code: `func test_whiles(){\n    dd a = 0;\n    while a < 10 {\n        a = a + 1;\n    }\n    return a;\n}` },
+                { title: "test_fors", code: `func test_fors(){\n    dd a = 0;\n    for dd i = 0; i < 10; i++;{\n        a = a + 1;\n    }\n    return a;\n}` },
+                { title: "forlooptest", code: `func forlooptest(){\n    dd a = 0;\n    for dd i = 0; i < 10; i++;{\n        a = a + i;\n    }\n    return a;\n}` },
+                { title: "forlooptest2", code: `func forlooptest2(){\n    dd a = 0;\n    for dd i = 0; i < 10; i++;{\n        if i = 0 {\n            return 10;\n        }\n    }\n    return a;\n}` },
+                { title: "nestedForLoops", code: `func nestedForLoops(){\n    dd a = 0;\n    for dd i = 0; i < 10; i++;{\n        for dd j = 0; j < 10; j++;{\n            a = a + 1;\n        }\n    }\n    return a;\n}` }
+            ],
+            "Conditionals": [
+                { title: "test_ifs", code: `func test_ifs(){\n    dd a = 0;\n    if a = 0 {\n        a = 10;\n    }\n    return a + 1 - 1;\n}` },
+                { title: "nestedIfs", code: `func nestedIfs(){\n    dd a = 0;\n    dd b = 20;\n    if a < 10 {\n        if b > 10 {\n            a = 10;\n        }\n    }\n    return 10;\n}` },
+                { title: "ret10if10", code: `func ret10if10(db a){\n    if a = 10 {\n        return 10;\n    }\n    return 0;\n}` },
+                { title: "testing_else1", code: `func testing_else1(){\n    dd testelf = 0;\n    if 1 = 0 {\n        testelf = testelf + 351;\n    }else {\n        testelf = testelf + 10;\n    }\n    return testelf;\n}` },
+                { title: "testing_else10", code: `func testing_else10(){\n    dd testelf = 0;\n    if 1 = 0 {\n        testelf = testelf + 351;\n    }elif 1 = 1 {\n        testelf = testelf + 10;\n    }\n    return testelf;\n}` }
+            ],
+            "Pointers": [
+                { title: "test_deaddressing", code: `func test_deaddressing(){\n    dd a = 10;\n    dd*b = &a;\n    dd*c = &b;\n    dd*d = &c;\n    return ***d;\n}` }
+            ],
+            "Logical Operators": [
+                { title: "test_gates", code: `func test_gates(){\n    dd a = 0;\n    dd b = 5;\n    if a < 10 & b > 0 {\n        a = a + 1;\n    }\n    while a < 10 & b < 15 {\n        a = a + 1;\n        b = b + 1;\n    }\n    for dd j = 0; j < 10 && a < 100; j++;{\n        a = a + 1;\n    }\n    if a < 10 | 0 = 0 {\n        a = a + 1;\n    }\n    return a + b;\n}` },
+                { title: "test_and_only", code: `func test_and_only(){\n    dd a = 5;\n    dd b = 7;\n    dd c = 0;\n    if a < 10 & b > 0 {\n        c = 1;\n    }\n    return c;\n}` },
+                { title: "test_and_false", code: `func test_and_false(){\n    dd a = 15;\n    dd b = 7;\n    dd c = 0;\n    if a < 10 & b > 0 {\n        c = 1;\n    }\n    return c;\n}` },
+                { title: "test_or_only", code: `func test_or_only(){\n    dd a = 5;\n    dd b = -3;\n    dd c = 0;\n    if a > 10 | b > 0 {\n        c = 1;\n    }\n    return c;\n}` },
+                { title: "test_or_true", code: `func test_or_true(){\n    dd a = 5;\n    dd b = 2;\n    dd c = 0;\n    if a > 10 | b > 0 {\n        c = 1;\n    }\n    return c;\n}` },
+                { title: "test_precedence", code: `func test_precedence(){\n    dd a = 5;\n    dd b = 10;\n    dd c = 0;\n    if a < 10 & b = 10 | a = 5 {\n        c = 1;\n    }\n    return c;\n}` },
+                { title: "test_simple_gate1", code: `func test_simple_gate1(){\n    dd a = 0;\n    if 1=1 & 1=1 | 1=0 {\n        a = 100;\n    }\n    return a;\n}` },
+                { title: "testeNot", code: `func testeNot(){\n    dd a = 0;\n    if not(a) = xFFFFFFFF {\n        a = 10;\n    }\n    return a;\n}` }
+            ],
+            "Recursion": [
+                { title: "testRecursion", code: `func testRecursion(db a){\n    if a < 10 {\n        a = a + 1;\n        return testRecursion(a);\n    }\n    return a;\n}` }
+            ]
+        };
+
+        /* ---------- Build and populate categories ---------- */
+        function buildCategoryTabs() {
+            const tabsEl = document.getElementById("categoryTabs");
+            tabsEl.innerHTML = `<button class="category-tab px-3 py-1.5 rounded bg-indigo-600 text-white" data-category="all">All</button>`;
+
+            // Add a tab for each category
+            Object.keys(snippetCategories).forEach(category => {
+                const btn = document.createElement("button");
+                btn.textContent = category;
+                btn.className = "category-tab px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 transition";
+                btn.dataset.category = category;
+                tabsEl.appendChild(btn);
+            });
+
+            // Add click events to tabs
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Update active state
+                    document.querySelectorAll('.category-tab').forEach(t => {
+                        t.classList.remove('bg-indigo-600');
+                        t.classList.add('bg-slate-700');
+                    });
+                    tab.classList.remove('bg-slate-700');
+                    tab.classList.add('bg-indigo-600');
+
+                    // Filter snippets
+                    filterSnippets();
+                });
+            });
+        }
+
+        function populateSnippets() {
+            const grid = document.getElementById("snippetGrid");
+            grid.innerHTML = "";
+
+            // Add all snippets from each category
+            Object.entries(snippetCategories).forEach(([category, snippets]) => {
+                snippets.forEach(snippet => {
+                    addAndHighlight(snippet.code, snippet.title, category);
+                });
+            });
+        }
+
+        /* ---------- Preview Modal ---------- */
+        function showPreview(title, code, category) {
+            const modal = document.getElementById('previewModal');
+            const titleEl = document.getElementById('previewTitle');
+            const codeEl = document.getElementById('previewCode').querySelector('code');
+
+            titleEl.textContent = title + ` (${category})`;
+            codeEl.textContent = code;
+            hljs.highlightElement(codeEl);
+
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+
+            // Set up the run button
+            document.getElementById('runPreviewBtn').onclick = () => {
+                editor.setValue(code);
+                document.getElementById('compileForm').dispatchEvent(new Event('submit'));
+                closePreview();
+            };
+
+            // Set up the copy button
+            document.getElementById('copyPreviewBtn').onclick = () => {
+                copyToClipboard(code);
+                showToast("Code copied!");
+            };
+
+            // Set up the load button
+            document.getElementById('loadPreviewBtn').onclick = () => {
+                editor.setValue(code);
+                closePreview();
+            };
+        }
+
+        function closePreview() {
+            document.getElementById('previewModal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        /* ---------- Utility functions ---------- */
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        function showToast(message) {
+            // Create toast if it doesn't exist
+            let toast = document.getElementById('toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toast';
+                toast.className = 'fixed bottom-5 right-5 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-20 opacity-0';
+                document.body.appendChild(toast);
+            }
+
+            // Set message and show
+            toast.textContent = message;
+            setTimeout(() => {
+                toast.classList.remove('translate-y-20', 'opacity-0');
+            }, 10);
+
+            // Hide after delay
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function filterSnippets() {
+            const searchText = document.getElementById('snippetSearch').value.toLowerCase();
+            const activeCategory = document.querySelector('.category-tab.bg-indigo-600').dataset.category;
+
+            document.querySelectorAll('.snippet-card').forEach(card => {
+                const titleMatch = card.dataset.title.includes(searchText);
+                const categoryMatch = activeCategory === 'all' || card.dataset.category === activeCategory;
+
+                if (titleMatch && categoryMatch) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        }
+
+        /* ---------- Initial setup ---------- */
+        // Build category tabs and populate snippets
+        buildCategoryTabs();
+        populateSnippets();
+
+        // Set up search functionality
+        document.getElementById('snippetSearch').addEventListener('input', filterSnippets);
+
+        // Set up modal close button
+        document.getElementById('closePreviewBtn').addEventListener('click', closePreview);
+
+        // Close modal when clicking outside
+        document.getElementById('previewModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('previewModal')) {
+                closePreview();
+            }
+        });
+
+        // Add escape key listener to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closePreview();
+            }
+        });
+
+        /* ---------- In-memory files for editing ---------- */
+        const files = {
+            "main": `include "arrays"\ninclude "strings"\ninclude "floats"\n\nfunc main(){\n    return 0;\n}`,
+            "arrays": `// arrays library demo\nfunc arrayLen(arr){ /* ... */ }`,
+            "strings": `// strings library demo\nfunc strlen(s){ /* ... */ }`,
+            "floats": `// floats library demo\nfunc addf(a, b){ /* ... */ }`,
+        };
+        let currentFile = "main";
+
+        /* ---------- Monaco ---------- */
+        require.config({ paths: { vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.47.0/min/vs" } });
+        let editor;
+
+        require(["vs/editor/editor.main"], function () {
+            monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({ noSemanticValidation: true, noSyntaxValidation: true });
+            monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({ noSemanticValidation: true, noSyntaxValidation: true });
+
+            editor = monaco.editor.create(document.getElementById("editor"), {
+                value: files[currentFile],
+                language: "javascript",
+                theme: "vs-dark",
+                automaticLayout: true,
+                minimap: { enabled: false },
+            });
+
+            buildTabs();
+        });
+
+        /* ---------- Build Tabs ---------- */
+        function buildTabs() {
+            const tabsEl = document.getElementById("fileTabs");
+            tabsEl.innerHTML = "";
+            Object.keys(files).forEach(fname => {
+                const btn = document.createElement("button");
+                btn.textContent = fname;
+                btn.className = `${fname === currentFile ? "bg-indigo-600" : "bg-slate-800 hover:bg-slate-700"} px-3 py-1 rounded`;
+                btn.onclick = () => { currentFile = fname; editor.setValue(files[fname]); buildTabs(); };
+                tabsEl.appendChild(btn);
+            });
+        }
+
+        /* ---------- Compile ---------- */
+        const form = document.getElementById("compileForm");
+        const outputEl = document.getElementById("output");
+        const statusEl = document.getElementById("status");
+
+        form.addEventListener("submit", async e => {
+            e.preventDefault();
+            outputEl.textContent = "";
+            statusEl.textContent = "compiling...";
+            try {
+                const body = new URLSearchParams();
+                body.append("code", editor.getValue());
+                const res = await fetch("/compile", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body });
+                const text = await res.text();
+                if (!res.ok) throw new Error(text);
+                outputEl.textContent = text || "(no output)";
+                statusEl.textContent = "✅ completed";
+            } catch (err) {
+                outputEl.textContent = String(err);
+                statusEl.textContent = "⚠️ error";
+            }
+        });
+    </script>
+</body>
+
+</html>
