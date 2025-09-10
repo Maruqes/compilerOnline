@@ -24,18 +24,50 @@
     <!-- Custom cursor -->
     <div class="custom-cursor" id="cursor"></div>
 
-    <header
-        class="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-slate-900/70 border-b border-slate-800/60">
-        <div class="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded bg-gradient-to-tr from-indigo-500 via-fuchsia-500 to-pink-500"></div>
-                <span class="font-semibold tracking-wide text-slate-200">512lang Tiny Compiler</span>
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-slate-950/80 border-b border-slate-800/40">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <!-- Logo & Brand -->
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <div
+                            class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 via-fuchsia-500 to-pink-500 shadow-lg shadow-fuchsia-500/25">
+                        </div>
+                        <div
+                            class="absolute inset-0 rounded-lg bg-gradient-to-br from-indigo-500 via-fuchsia-500 to-pink-500 blur-sm opacity-50">
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-lg font-bold text-white leading-none">512lang</span>
+                        <span class="text-xs text-slate-400 leading-none">Tiny Compiler</span>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-4">
+                    <!-- GitHub Link -->
+                    <a href="https://github.com/Maruqes/compiler" target="_blank" rel="noopener noreferrer"
+                        class="group flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-300 hover:text-white border border-slate-700/60 hover:border-slate-600/80 rounded-lg transition-all duration-200 hover:bg-slate-800/50">
+                        <svg class="w-4 h-4 transition-transform group-hover:scale-110" fill="currentColor"
+                            viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span>GitHub</span>
+                    </a>
+
+                    <!-- CTA Button -->
+                    <a href="https://github.com/Maruqes/compiler/releases" target="_blank" rel="noopener noreferrer"
+                        class="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 rounded-lg shadow-lg shadow-fuchsia-600/25 transition-all duration-200 hover:shadow-fuchsia-600/40 hover:scale-105">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>Download</span>
+                    </a>
+                </div>
             </div>
-            <nav class="hidden md:flex gap-6 text-sm">
-                <a href="#example" class="hover:text-fuchsia-400 transition">Example</a>
-                <a href="#runtime" class="hover:text-fuchsia-400 transition">Runtime</a>
-                <a href="#contact" class="hover:text-fuchsia-400 transition">Status</a>
-            </nav>
         </div>
     </header>
     <section class="hero-bg relative overflow-hidden min-h-screen">
@@ -198,53 +230,156 @@
     </section>
     <section id="runtime" class="py-24 bg-slate-900/40 border-y border-slate-800/60">
         <div class="max-w-6xl mx-auto px-5">
-            <h2 class="text-3xl md:text-4xl font-bold mb-16 text-center">Compiler Architecture</h2>
-            <div class="grid md:grid-cols-3 gap-8 text-sm leading-relaxed">
-                <div class="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700/50 backdrop-blur-sm glow">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div
-                            class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <h3 class="font-semibold text-lg text-indigo-300">Frontend</h3>
-                    </div>
-                    <p class="text-slate-300">Go-based lexer, parser, and semantic analyzer. Clean recursive descent
-                        parsing with proper error
-                        handling and comprehensive diagnostics.</p>
+            <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center">The Journey: From Source to Binary</h2>
+            <p class="text-xl text-slate-300 mb-16 text-center max-w-3xl mx-auto">Follow the epic tale of how 512lang
+                transforms your source code into executable machine code, without a single external dependency.</p>
+
+            <!-- Story Timeline -->
+            <div class="relative">
+                <!-- Connecting line -->
+                <div
+                    class="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-indigo-500 via-fuchsia-500 to-emerald-500 hidden md:block">
                 </div>
-                <div class="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700/50 backdrop-blur-sm glow">
-                    <div class="flex items-center gap-3 mb-4">
+
+                <!-- Chapter 1: ELF Foundation -->
+                <div class="mb-16 md:pl-20">
+                    <div class="flex items-center gap-4 mb-6">
                         <div
-                            class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd"
-                                    d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"
-                                    clip-rule="evenodd" />
-                            </svg>
+                            class="w-16 h-16 rounded-full bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center border-4 border-slate-800 relative z-10">
+                            <span class="text-2xl font-bold text-indigo-300">1</span>
                         </div>
-                        <h3 class="font-semibold text-lg text-indigo-300">Backend</h3>
+                        <h3 class="text-2xl font-bold text-indigo-300">The Foundation: ELF Structure in C</h3>
                     </div>
-                    <p class="text-slate-300">Pure C assembler that emits raw machine code directly. Zero external
-                        dependencies,
-                        complete control over code generation.</p>
+                    <div class="bg-slate-800/50 rounded-xl p-6 backdrop-blur-sm glow border border-slate-700/50">
+                        <p class="text-slate-300 leading-relaxed mb-4">
+                            <span class="text-indigo-400 font-semibold">Our story begins</span> with the foundation—a
+                            carefully crafted ELF (Executable and Linkable Format) structure written entirely in C. This
+                            isn't just metadata; it's the DNA of every executable file that will emerge from our
+                            compiler.
+                        </p>
+                        <p class="text-slate-400 text-sm">
+                            Deep in the C backend, ELF headers, program headers, and section tables are meticulously
+                            defined, creating the skeleton that will house our generated machine code.
+                        </p>
+                    </div>
                 </div>
-                <div class="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700/50 backdrop-blur-sm glow">
+
+                <!-- Chapter 2: Raw Instructions -->
+                <div class="mb-16 md:pl-20">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div
+                            class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center border-4 border-slate-800 relative z-10">
+                            <span class="text-2xl font-bold text-white">2</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-purple-300">The Forge: Hard-Coded Machine Instructions</h3>
+                    </div>
+                    <div class="bg-slate-800/50 rounded-xl p-6 backdrop-blur-sm glow border border-slate-700/50">
+                        <p class="text-slate-300 leading-relaxed mb-4">
+                            <span class="text-purple-400 font-semibold">In the heart of the backend</span>, raw x86-64
+                            machine instructions are hard-coded in pure C. No assembler, no LLVM—just bytes of machine
+                            code crafted by hand. Each operation, from simple arithmetic to complex control flow, has
+                            its corresponding machine code sequence ready to be emitted.
+                        </p>
+                        <div class="mt-4">
+                            <pre><code class="language-c">void mov64_r_i(uint8_t reg_code, uint64_t value)
+{
+    // Allocate 10 bytes for REX + opcode + immediate (1 + 1 + 8)
+    char *opcode_bytes = malloc(10);
+    if (!opcode_bytes)
+    {
+        perror("Failed to allocate memory for opcode_bytes");
+        exit(EXIT_FAILURE);
+    }
+
+    // Set REX prefix, handle high registers correctly
+    set_rex_prefix(opcode_bytes, 1, 0, 0, (reg_code &gt;= REG_R8) ? 1 : 0);
+    opcode_bytes[1] = 0xB8 + (reg_code &amp; 0x7); // Opcode for 'mov r64, imm64'
+
+    // Copy the 8-byte immediate value
+    memcpy(&amp;opcode_bytes[2], &amp;value, sizeof(value));
+
+    // Create the OpCode object
+    OpCode new_opcode;
+    new_opcode.size = 10;
+    new_opcode.code = opcode_bytes;
+
+    // Add the opcode to the array
+    op_codes_array = realloc(op_codes_array, (op_codes_array_size + 1) * sizeof(OpCode));
+    if (!op_codes_array)
+    {
+        perror("Failed to reallocate memory for op_codes_array");
+        free(opcode_bytes); // Free the just allocated memory to prevent leaks
+        exit(EXIT_FAILURE);
+    }
+
+    op_codes_array[op_codes_array_size++] = new_opcode;
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chapter 2.5: SWIG Bridge (bullet) -->
+                <div class="mb-10 md:pl-20">
                     <div class="flex items-center gap-3 mb-4">
                         <div
-                            class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd"
-                                    d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                                    clip-rule="evenodd" />
-                            </svg>
+                            class="w-10 h-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-500 flex items-center justify-center border-2 border-slate-800 relative z-10">
+                            <span class="text-base font-bold text-white">2.5</span>
                         </div>
-                        <h3 class="font-semibold text-lg text-indigo-300">Output</h3>
+                        <h3 class="text-lg font-semibold text-slate-300">The Bridge: SWIG makes Go → C easy</h3>
                     </div>
-                    <p class="text-slate-300">Direct binary emission with proper ELF headers, symbol tables, and
-                        executable segments.
-                        Ready-to-run binaries without linker overhead.</p>
+                    <div class="bg-slate-800/40 rounded-lg p-3 md:p-4 backdrop-blur-sm border border-slate-700/40">
+                        <p class="text-slate-300 text-sm leading-relaxed">
+                            SWIG generates thin, idiomatic Go wrappers for the C backend, so the parser can call code
+                            generation directly without manual cgo boilerplate.
+                        </p>
+                        <p class="text-slate-400 text-sm mt-3">
+                            Go AST → SWIG wrappers → C backend → Machine code bytes → ELF
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Chapter 3: Go Parser -->
+                <div class="mb-16 md:pl-20">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div
+                            class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center border-4 border-slate-800 relative z-10">
+                            <span class="text-2xl font-bold text-white">3</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-blue-300">The Translator: Go-Powered Frontend</h3>
+                    </div>
+                    <div class="bg-slate-800/50 rounded-xl p-6 backdrop-blur-sm glow border border-slate-700/50">
+                        <p class="text-slate-300 leading-relaxed mb-4">
+                            <span class="text-blue-400 font-semibold">Enter the frontend wizard</span>—a sophisticated
+                            Go-based parser that understands 512lang syntax. Through recursive descent parsing, it
+                            transforms your high-level code into an Abstract Syntax Tree (AST), performing semantic
+                            analysis and type checking along the way.
+                        </p>
+                        <p class="text-slate-400 text-sm">
+                            Parsing
+                        </p>
+                        <div class="mt-4">
+                            <pre><code class="language-go">if origin == ORIGIN_RBP {
+    switch varType {
+    case DB:
+        backend.Sub64_r_i(byte(backend.REG_RSP), 1)
+        backend.Mov8_m_r(byte(backend.REG_RSP), byte(backend.REG_RAX))
+        vl.lastPos -= 1
+    case DW:
+        backend.Sub64_r_i(byte(backend.REG_RSP), 2)
+        backend.Mov16_m_r(byte(backend.REG_RSP), byte(backend.REG_RAX))
+        vl.lastPos -= 2
+    case DD:
+        backend.Sub64_r_i(byte(backend.REG_RSP), 4)
+        backend.Mov32_m_r(byte(backend.REG_RSP), byte(backend.REG_RAX))
+        vl.lastPos -= 4
+    case DQ:
+        backend.Sub64_r_i(byte(backend.REG_RSP), 8)
+        backend.Mov64_m_r(byte(backend.REG_RSP), byte(backend.REG_RAX))
+        vl.lastPos -= 8
+    }
+}</code></pre>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
