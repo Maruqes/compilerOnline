@@ -32,7 +32,6 @@
                 <span class="font-semibold tracking-wide text-slate-200">512lang Tiny Compiler</span>
             </div>
             <nav class="hidden md:flex gap-6 text-sm">
-                <a href="#features" class="hover:text-fuchsia-400 transition">Features</a>
                 <a href="#example" class="hover:text-fuchsia-400 transition">Example</a>
                 <a href="#runtime" class="hover:text-fuchsia-400 transition">Runtime</a>
                 <a href="#contact" class="hover:text-fuchsia-400 transition">Status</a>
@@ -109,79 +108,6 @@
                                 data-slide="3"></button>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <section id="features" class="py-24 border-t border-slate-800/60 bg-slate-900/40">
-        <div class="max-w-6xl mx-auto px-5">
-            <h2 class="text-3xl md:text-4xl font-bold mb-16 text-center">Language Features</h2>
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="p-6 rounded-xl bg-slate-800/50 backdrop-blur-sm glow border border-slate-700/50">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-2 h-2 rounded-full bg-fuchsia-400"></div>
-                        <h3 class="font-semibold text-fuchsia-300">Structs & Types</h3>
-                    </div>
-                    <p class="text-sm text-slate-300 leading-relaxed">Strong typing with <code
-                            class="px-1.5 py-0.5 rounded bg-slate-700/60 text-fuchsia-300 font-mono text-xs">dq</code>
-                        (8 bytes),
-                        <code class="px-1.5 py-0.5 rounded bg-slate-700/60 text-fuchsia-300 font-mono text-xs">dd</code>
-                        (4 bytes), <code
-                            class="px-1.5 py-0.5 rounded bg-slate-700/60 text-fuchsia-300 font-mono text-xs">dw</code>
-                        (2 bytes), <code
-                            class="px-1.5 py-0.5 rounded bg-slate-700/60 text-fuchsia-300 font-mono text-xs">db</code>
-                        (1 byte), and
-                        <code
-                            class="px-1.5 py-0.5 rounded bg-slate-700/60 text-fuchsia-300 font-mono text-xs">ptr</code>
-                        (8 bytes). Custom struct definitions.
-                    </p>
-                </div>
-                <div class="p-6 rounded-xl bg-slate-800/50 backdrop-blur-sm glow border border-slate-700/50">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-2 h-2 rounded-full bg-blue-400"></div>
-                        <h3 class="font-semibold text-fuchsia-300">Control Flow</h3>
-                    </div>
-                    <p class="text-sm text-slate-300 leading-relaxed">Complete control structures:
-                        <code
-                            class="px-1.5 py-0.5 rounded bg-slate-700/60 text-blue-300 font-mono text-xs">if/elif/else</code>,
-                        <code class="px-1.5 py-0.5 rounded bg-slate-700/60 text-blue-300 font-mono text-xs">while</code>
-                        loops, <code
-                            class="px-1.5 py-0.5 rounded bg-slate-700/60 text-blue-300 font-mono text-xs">for</code>
-                        loops with proper scoping
-                        and nested conditionals.
-                    </p>
-                </div>
-                <div class="p-6 rounded-xl bg-slate-800/50 backdrop-blur-sm glow border border-slate-700/50">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
-                        <h3 class="font-semibold text-fuchsia-300">Pointers & Memory</h3>
-                    </div>
-                    <p class="text-sm text-slate-300 leading-relaxed">Full pointer support with address-of operations,
-                        dereferencing, and manual memory management primitives.</p>
-                </div>
-                <div class="p-6 rounded-xl bg-slate-800/50 backdrop-blur-sm glow border border-slate-700/50">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-2 h-2 rounded-full bg-amber-400"></div>
-                        <h3 class="font-semibold text-fuchsia-300">Arrays & Globals</h3>
-                    </div>
-                    <p class="text-sm text-slate-300 leading-relaxed">Global variable declarations, array types, and
-                        indexing operations with compile-time bounds checking.</p>
-                </div>
-                <div class="p-6 rounded-xl bg-slate-800/50 backdrop-blur-sm glow border border-slate-700/50">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-2 h-2 rounded-full bg-red-400"></div>
-                        <h3 class="font-semibold text-fuchsia-300">Embedded Assembly</h3>
-                    </div>
-                    <p class="text-sm text-slate-300 leading-relaxed">Write inline assembly directly within 512lang code
-                        for performance-critical sections or direct hardware access.</p>
-                </div>
-                <div class="p-6 rounded-xl bg-slate-800/50 backdrop-blur-sm glow border border-slate-700/50">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-2 h-2 rounded-full bg-violet-400"></div>
-                        <h3 class="font-semibold text-fuchsia-300">Direct Binary Output</h3>
-                    </div>
-                    <p class="text-sm text-slate-300 leading-relaxed">Pure C backend assembler that emits raw machine
-                        code without intermediate representations or external toolchain dependencies.</p>
                 </div>
             </div>
         </div>
