@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>512lang Tiny Compiler</title>
     <meta name="description"
-        content="512lang – zero-dependency tiny compiler that transforms text directly into binary. No LLVM, no external toolchain. Pure C backend, Go frontend." />
+        content="512lang — tiny compiler that emits x86-64 ELF binaries directly. No LLVM, no external toolchain. C backend, Go frontend." />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -63,22 +63,18 @@
             <div class="grid lg:grid-cols-2 gap-12 items-center w-full">
                 <!-- Left column - Text content -->
                 <div class="max-w-2xl">
-                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight grad-text mb-8">
-                        Zero-Dependency
-                        Compiler
-                        That Outputs Raw Binary</h1>
-                    <p class="text-xl md:text-2xl text-slate-300 leading-relaxed font-light mb-4">512lang is a tiny,
-                        self-contained compiler that
-                        transforms source code directly into executable machine code.</p>
-                    <p class="text-lg text-slate-400 leading-relaxed mb-10">No LLVM, no external dependencies—just
-                        a handcrafted assembler backend in pure C and a frontend parser in Go.</p>
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight grad-text mb-8">Tiny
+                        compiler that writes raw binaries</h1>
+                    <p class="text-xl md:text-2xl text-slate-300 leading-relaxed font-light mb-4">512lang is a small,
+                        self-contained compiler that emits x86-64 machine code directly.</p>
+                    <p class="text-lg text-slate-400 leading-relaxed mb-10">No LLVM, no external toolchain — C backend
+                        and Go frontend. What you write is what we encode.</p>
                     <div class="flex flex-wrap gap-4 mb-12">
                         <a href="https://github.com/Maruqes/compiler" target="_blank" rel="noopener noreferrer"
-                            class="px-6 py-3 rounded-lg bg-fuchsia-600/90 hover:bg-fuchsia-500 font-semibold shadow-lg shadow-fuchsia-600/25 text-white transition-all">Get
-                            It Now</a>
+                            class="px-6 py-3 rounded-lg bg-fuchsia-600/90 hover:bg-fuchsia-500 font-semibold shadow-lg shadow-fuchsia-600/25 text-white transition-all">Source</a>
                         <button
                             class="px-6 py-3 rounded-lg border border-slate-600 hover:border-fuchsia-500/70 hover:text-fuchsia-300 font-semibold backdrop-blur-sm bg-slate-900/30 transition-all">Try
-                            It Now</button>
+                            it</button>
                     </div>
                     <div class="flex flex-wrap gap-6 text-sm text-slate-500 uppercase tracking-wider">
                         <span class="flex items-center gap-2">
@@ -87,7 +83,7 @@
                         </span>
                         <span class="flex items-center gap-2">
                             <div class="w-1.5 h-1.5 rounded-full bg-slate-600"></div>
-                            No linker layers
+                            No linker
                         </span>
                         <span class="flex items-center gap-2">
                             <div class="w-1.5 h-1.5 rounded-full bg-slate-600"></div>
@@ -135,9 +131,8 @@
     <section id="example" class="py-24">
         <div class="max-w-6xl mx-auto px-5">
             <h2 class="text-3xl md:text-4xl font-bold mb-8 text-center">Code Examples</h2>
-            <p class="text-xl text-slate-300 mb-12 text-center max-w-2xl mx-auto">Explore 512lang through practical
-                examples showcasing language
-                features and syntax</p>
+            <p class="text-xl text-slate-300 mb-12 text-center max-w-2xl mx-auto">Practical snippets that show the
+                syntax and behavior of the language.</p>
 
             <!-- Tab Navigation -->
             <div
@@ -155,7 +150,7 @@
                 <button
                     class="tab-btn px-5 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
                     data-tab="arithmetics">
-                    Arithmetics
+                    Arithmetic
                 </button>
                 <button
                     class="tab-btn px-5 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
@@ -218,9 +213,9 @@
     </section>
     <section id="runtime" class="py-24 bg-slate-900/40 border-y border-slate-800/60">
         <div class="max-w-6xl mx-auto px-5">
-            <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center">The Journey: From Source to Binary</h2>
-            <p class="text-xl text-slate-300 mb-16 text-center max-w-3xl mx-auto">Follow the epic tale of how 512lang
-                transforms your source code into executable machine code, without a single external dependency.</p>
+            <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center">Pipeline: source → binary</h2>
+            <p class="text-xl text-slate-300 mb-16 text-center max-w-3xl mx-auto">How the parts fit together to
+                produce an ELF, with zero external dependencies.</p>
 
             <!-- Story Timeline -->
             <div class="relative">
@@ -229,122 +224,19 @@
                     class="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-500 via-purple-400 to-purple-300 hidden md:block">
                 </div>
 
-                <!-- Chapter 1: ELF Foundation -->
-                <div class="mb-16 md:pl-20">
-                    <div class="flex items-center gap-4 mb-6">
-                        <div
-                            class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center border-4 border-slate-800 relative z-10">
-                            <span class="text-2xl font-bold text-purple-200">1</span>
-                        </div>
-                        <h3 class="text-2xl font-bold text-purple-300">The Foundation: ELF Structure in C</h3>
-                    </div>
-                    <div class="bg-slate-800/50 rounded-xl p-6 backdrop-blur-sm glow border border-slate-700/50">
-                        <p class="text-slate-300 leading-relaxed mb-4">
-                            <span class="text-indigo-400 font-semibold">Our story begins</span> with the foundation—a
-                            carefully crafted ELF (Executable and Linkable Format) structure written entirely in C. This
-                            isn't just metadata; it's the DNA of every executable file that will emerge from our
-                            compiler.
-                        </p>
-                        <p class="text-slate-400 text-sm">
-                            Deep in the C backend, ELF headers, program headers, and section tables are meticulously
-                            defined, creating the skeleton that will house our generated machine code.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Chapter 2: Raw Instructions -->
-                <div class="mb-16 md:pl-20">
-                    <div class="flex items-center gap-4 mb-6">
-                        <div
-                            class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center border-4 border-slate-800 relative z-10">
-                            <span class="text-2xl font-bold text-purple-100">2</span>
-                        </div>
-                        <h3 class="text-2xl font-bold text-purple-300">The Forge: Hard-Coded Machine Instructions</h3>
-                    </div>
-                    <div class="bg-slate-800/50 rounded-xl p-6 backdrop-blur-sm glow border border-slate-700/50">
-                        <p class="text-slate-300 leading-relaxed mb-4">
-                            <span class="text-purple-400 font-semibold">In the heart of the backend</span>, raw x86-64
-                            machine instructions are hard-coded in pure C. No assembler, no LLVM—just bytes of machine
-                            code crafted by hand. Each operation, from simple arithmetic to complex control flow, has
-                            its corresponding machine code sequence ready to be emitted.
-                        </p>
-                        <div class="mt-4">
-                            <pre><code class="language-c">void mov64_r_i(uint8_t reg_code, uint64_t value)
-{
-    // Allocate 10 bytes for REX + opcode + immediate (1 + 1 + 8)
-    char *opcode_bytes = malloc(10);
-    if (!opcode_bytes)
-    {
-        perror("Failed to allocate memory for opcode_bytes");
-        exit(EXIT_FAILURE);
-    }
-
-    // Set REX prefix, handle high registers correctly
-    set_rex_prefix(opcode_bytes, 1, 0, 0, (reg_code &gt;= REG_R8) ? 1 : 0);
-    opcode_bytes[1] = 0xB8 + (reg_code &amp; 0x7); // Opcode for 'mov r64, imm64'
-
-    // Copy the 8-byte immediate value
-    memcpy(&amp;opcode_bytes[2], &amp;value, sizeof(value));
-
-    // Create the OpCode object
-    OpCode new_opcode;
-    new_opcode.size = 10;
-    new_opcode.code = opcode_bytes;
-
-    // Add the opcode to the array
-    op_codes_array = realloc(op_codes_array, (op_codes_array_size + 1) * sizeof(OpCode));
-    if (!op_codes_array)
-    {
-        perror("Failed to reallocate memory for op_codes_array");
-        free(opcode_bytes); // Free the just allocated memory to prevent leaks
-        exit(EXIT_FAILURE);
-    }
-
-    op_codes_array[op_codes_array_size++] = new_opcode;
-}</code></pre>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Chapter 2.5: SWIG Bridge (bullet) -->
-                <div class="mb-10 md:pl-20">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div
-                            class="w-10 h-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-500 flex items-center justify-center border-2 border-slate-800 relative z-10">
-                            <span class="text-base font-bold text-white">2.5</span>
-                        </div>
-                        <h3 class="text-lg font-semibold text-slate-300">The Bridge: SWIG makes Go → C easy</h3>
-                    </div>
-                    <div class="bg-slate-800/40 rounded-lg p-3 md:p-4 backdrop-blur-sm border border-slate-700/40">
-                        <p class="text-slate-300 text-sm leading-relaxed">
-                            SWIG generates thin, idiomatic Go wrappers for the C backend, so the parser can call code
-                            generation directly without manual cgo boilerplate.
-                        </p>
-                        <p class="text-slate-400 text-sm mt-3">
-                            Go AST → SWIG wrappers → C backend → Machine code bytes → ELF
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Chapter 3: Go Parser -->
+                <!-- Chapter 1: Go Parser -->
                 <div class="mb-16 md:pl-20">
                     <div class="flex items-center gap-4 mb-6">
                         <div
                             class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-purple-500 flex items-center justify-center border-4 border-slate-800 relative z-10">
-                            <span class="text-2xl font-bold text-purple-100">3</span>
+                            <span class="text-2xl font-bold text-purple-100">1</span>
                         </div>
-                        <h3 class="text-2xl font-bold text-purple-300">The Translator: Go-Powered Frontend</h3>
+                        <h3 class="text-2xl font-bold text-purple-300">Go parser</h3>
                     </div>
                     <div class="bg-slate-800/50 rounded-xl p-6 backdrop-blur-sm glow border border-slate-700/50">
-                        <p class="text-slate-300 leading-relaxed mb-4">
-                            <span class="text-blue-400 font-semibold">Enter the frontend wizard</span>—a sophisticated
-                            Go-based parser that understands 512lang syntax. Through recursive descent parsing, it
-                            transforms your high-level code into an Abstract Syntax Tree (AST), performing semantic
-                            analysis and type checking along the way.
-                        </p>
-                        <p class="text-slate-400 text-sm">
-                            Parsing
-                        </p>
+                        <p class="text-slate-300 leading-relaxed mb-4">Recursive‑descent parser in Go,
+                            runs basic semantic checks and types, then walks the tree to drive codegen.</p>
+                        <p class="text-slate-400 text-sm">Semantic checks</p>
                         <div class="mt-4">
                             <pre><code class="language-go">if origin == ORIGIN_RBP {
     switch varType {
@@ -367,6 +259,88 @@
     }
 }</code></pre>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Chapter 2.5: SWIG Bridge (bullet) -->
+                <div class="mb-10 md:pl-20">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div
+                            class="w-10 h-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-500 flex items-center justify-center border-2 border-slate-800 relative z-10">
+                            <span class="text-base font-bold text-white">2.5</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-slate-300">SWIG: thin Go ↔ C wrappers</h3>
+                    </div>
+                    <div class="bg-slate-800/40 rounded-lg p-3 md:p-4 backdrop-blur-sm border border-slate-700/40">
+                        <p class="text-slate-300 text-sm leading-relaxed">SWIG generates slim Go wrappers for the C
+                            backend so the parser calls codegen directly — no hand‑written cgo.</p>
+                        <p class="text-slate-400 text-sm mt-3">
+                            See "swig" folder on project repo.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Chapter 3: Raw Instructions -->
+                <div class="mb-16 md:pl-20">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div
+                            class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center border-4 border-slate-800 relative z-10">
+                            <span class="text-2xl font-bold text-purple-100">3</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-purple-300">C backend: raw x86‑64 opcodes</h3>
+                    </div>
+                    <div class="bg-slate-800/50 rounded-xl p-6 backdrop-blur-sm glow border border-slate-700/50">
+                        <p class="text-slate-300 leading-relaxed mb-4">The C backend encodes instructions directly.
+                            No assembler, no LLVM. Operations map to byte sequences appended to a buffer.</p>
+                        <div class="mt-4">
+                            <pre><code class="language-c">void mov64_r_i(uint8_t reg_code, uint64_t value)
+{
+    // REX + opcode + immediate (1 + 1 + 8)
+    char *opcode_bytes = malloc(10);
+    if (!opcode_bytes)
+    {
+        perror("Failed to allocate memory for opcode_bytes");
+        exit(EXIT_FAILURE);
+    }
+
+    set_rex_prefix(opcode_bytes, 1, 0, 0, (reg_code &gt;= REG_R8) ? 1 : 0);
+    opcode_bytes[1] = 0xB8 + (reg_code &amp; 0x7); // Opcode for 'mov r64, imm64'
+
+    memcpy(&amp;opcode_bytes[2], &amp;value, sizeof(value));
+
+    //create new OpCode and append to op_codes_array
+    OpCode new_opcode;
+    new_opcode.size = 10;
+    new_opcode.code = opcode_bytes;
+
+    op_codes_array = realloc(op_codes_array, (op_codes_array_size + 1) * sizeof(OpCode));
+    if (!op_codes_array)
+    {
+        perror("Failed to reallocate memory for op_codes_array");
+        free(opcode_bytes);
+        exit(EXIT_FAILURE);
+    }
+
+    op_codes_array[op_codes_array_size++] = new_opcode;
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chapter 4: ELF Writer -->
+                <div class="mb-16 md:pl-20">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div
+                            class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center border-4 border-slate-800 relative z-10">
+                            <span class="text-2xl font-bold text-purple-200">4</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-purple-300">ELF writer (C)</h3>
+                    </div>
+                    <div class="bg-slate-800/50 rounded-xl p-6 backdrop-blur-sm glow border border-slate-700/50">
+                        <p class="text-slate-300 leading-relaxed mb-4">Wrap the bytes into a minimal ELF: file
+                            header, program headers. All written in C.</p>
+                        <p class="text-slate-400 text-sm">Result: a runnable ELF produced without an external
+                            toolchain.</p>
                     </div>
                 </div>
             </div>
