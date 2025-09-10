@@ -59,6 +59,9 @@ func main() {
 		if path == "/" {
 			path = "/index.html"
 		}
+		if path == "/compiler" {
+			path = "/compiler.html"
+		}
 		full := filepath.Join("web", filepath.Clean(path))
 		if _, err := os.Stat(full); err == nil {
 			http.ServeFile(w, r, full)
