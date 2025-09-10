@@ -226,17 +226,17 @@
             <div class="relative">
                 <!-- Connecting line -->
                 <div
-                    class="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-indigo-500 via-fuchsia-500 to-emerald-500 hidden md:block">
+                    class="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-500 via-purple-400 to-purple-300 hidden md:block">
                 </div>
 
                 <!-- Chapter 1: ELF Foundation -->
                 <div class="mb-16 md:pl-20">
                     <div class="flex items-center gap-4 mb-6">
                         <div
-                            class="w-16 h-16 rounded-full bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center border-4 border-slate-800 relative z-10">
-                            <span class="text-2xl font-bold text-indigo-300">1</span>
+                            class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center border-4 border-slate-800 relative z-10">
+                            <span class="text-2xl font-bold text-purple-200">1</span>
                         </div>
-                        <h3 class="text-2xl font-bold text-indigo-300">The Foundation: ELF Structure in C</h3>
+                        <h3 class="text-2xl font-bold text-purple-300">The Foundation: ELF Structure in C</h3>
                     </div>
                     <div class="bg-slate-800/50 rounded-xl p-6 backdrop-blur-sm glow border border-slate-700/50">
                         <p class="text-slate-300 leading-relaxed mb-4">
@@ -256,8 +256,8 @@
                 <div class="mb-16 md:pl-20">
                     <div class="flex items-center gap-4 mb-6">
                         <div
-                            class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center border-4 border-slate-800 relative z-10">
-                            <span class="text-2xl font-bold text-white">2</span>
+                            class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center border-4 border-slate-800 relative z-10">
+                            <span class="text-2xl font-bold text-purple-100">2</span>
                         </div>
                         <h3 class="text-2xl font-bold text-purple-300">The Forge: Hard-Coded Machine Instructions</h3>
                     </div>
@@ -330,10 +330,10 @@
                 <div class="mb-16 md:pl-20">
                     <div class="flex items-center gap-4 mb-6">
                         <div
-                            class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center border-4 border-slate-800 relative z-10">
-                            <span class="text-2xl font-bold text-white">3</span>
+                            class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-purple-500 flex items-center justify-center border-4 border-slate-800 relative z-10">
+                            <span class="text-2xl font-bold text-purple-100">3</span>
                         </div>
-                        <h3 class="text-2xl font-bold text-blue-300">The Translator: Go-Powered Frontend</h3>
+                        <h3 class="text-2xl font-bold text-purple-300">The Translator: Go-Powered Frontend</h3>
                     </div>
                     <div class="bg-slate-800/50 rounded-xl p-6 backdrop-blur-sm glow border border-slate-700/50">
                         <p class="text-slate-300 leading-relaxed mb-4">
@@ -373,19 +373,28 @@
         </div>
     </section>
 
-    <footer class="py-12 text-center border-t border-slate-800/60 bg-slate-950/80 backdrop-blur-sm">
-        <div class="max-w-6xl mx-auto px-5">
-            <div class="flex items-center justify-center gap-2 mb-4">
-                <div class="w-6 h-6 rounded bg-gradient-to-tr from-indigo-500 via-fuchsia-500 to-pink-500"></div>
-                <span class="font-semibold text-slate-300">512lang Tiny Compiler</span>
+    <footer class="border-t border-slate-800/30 bg-slate-950/90 backdrop-blur-sm">
+        <div class="max-w-6xl mx-auto px-6 py-8">
+            <div class="flex items-center justify-between">
+                <!-- Logo & Brand (matching header) -->
+                <div class="flex items-center gap-3">
+                    <img src="https://github.com/Maruqes.png" alt="Maruqes" class="w-8 h-8 rounded-md object-cover">
+                    <div>
+                        <span class="text-lg font-bold text-white">512lang</span>
+                        <span class="ml-2 text-sm text-slate-400">by Maruqes</span>
+                    </div>
+                </div>
+
+                <!-- Links & Info -->
+                <div class="flex items-center gap-6 text-sm text-slate-400">
+                    <span>Zero dependencies • Direct binary emission</span>
+                    <span>© <span id="current-year">2025</span> Open Source</span>
+                </div>
             </div>
-            <p class="text-sm text-slate-500 mb-4">Built with zero dependencies • Direct binary emission • Pure
-                performance</p>
-            <p class="text-xs text-slate-600">© <span id="current-year">2025</span> • Open Source</p>
-            <script>
-                document.getElementById('current-year').textContent = new Date().getFullYear();
-            </script>
         </div>
+        <script>
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+        </script>
     </footer>
 
     <script src="examples.js"></script>
