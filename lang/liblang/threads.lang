@@ -1,0 +1,102 @@
+//depends on liblang/mem.lang
+//depends on liblang/min.lang
+
+func sys_clone(dq flags, ptr child_stack, ptr ptid, ptr ctid, ptr newtls){
+	dq ret;
+	asm(mov64_r_i, rax, 56); // syscall number for clone
+	loadReg(rdi, flags);
+	loadReg(rsi, child_stack);
+	loadReg(rdx, ptid);
+	loadReg(r10, ctid);
+	loadReg(r8, newtls);
+	asm(syscall);
+	loadVar(ret, rax);
+	return ret;
+}
+
+func addThreadVariable(ptr stack, dq stack_size, dq param, dq index){
+	dq pStack = stack + stack_size;
+	pStack = pStack & 0xfffffffffffffff0;
+	pStack = pStack - 16;
+
+	memcpy(pStack - (index * 8), &param, 8);
+}
+
+
+func createThreadIds(ptr start_routine, ptr pStack2, dq stack_size, ptr out_child_tid, ptr out_parent_tid, ptr param_max){
+
+	// Common Linux thread flags: share VM/files/fs/sighandlers, be same thread group
+	dq CLONE_VM      = 0x00000100;
+	dq CLONE_FS      = 0x00000200;
+	dq CLONE_FILES   = 0x00000400;
+	dq CLONE_SIGHAND = 0x00000800;
+	dq CLONE_THREAD         = 0x00010000;
+	dq CLONE_SYSVSEM        = 0x00040000;
+	dq CLONE_PARENT_SETTID  = 0x00100000;
+	dq CLONE_CHILD_CLEARTID = 0x00200000; // used for futex join
+	dq CLONE_CHILD_SETTID   = 0x01000000;
+	dq BASE_FLAGS = CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_THREAD | CLONE_SYSVSEM;
+
+	dq THREAD_FLAGS = BASE_FLAGS;
+	if out_parent_tid != 0 { THREAD_FLAGS = THREAD_FLAGS | CLONE_PARENT_SETTID; }
+	if out_child_tid != 0 { THREAD_FLAGS = THREAD_FLAGS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID; }
+
+
+	dq pStack = pStack2 + stack_size;
+	// Align stack to 16 bytes and set state required before 'call' (RSP%16==8)
+	pStack = pStack & 0xfffffffffffffff0;
+	pStack = pStack - 8 - (8 * param_max); // reserve space for return address + parameters
+
+	dq ret = sys_clone(THREAD_FLAGS, pStack, out_parent_tid, out_child_tid, 0);
+
+	if ret == 0 {
+		loadReg(rbx, start_routine);
+		loadReg(rsp, pStack);
+		asm(call_raw_address, rbx);
+		exit(0);
+	}
+	nanosleep(0, 1000000); // sleep 1ms to let thread start (otherwise sometimes the parent exits before child starts)
+	return ret;
+}
+
+
+// Minimal futex syscall wrapper (x86_64: SYS_futex=202)
+func sys_futex(ptr uaddr, dq futex_op, dq val, ptr timeout, ptr uaddr2, dq val3){
+	asm(mov64_r_i, rax, 202);
+	loadReg(rdi, uaddr);
+	loadReg(rsi, futex_op);
+	loadReg(rdx, val);
+	loadReg(r10, timeout);
+	loadReg(r8, uaddr2);
+	asm(mov64_r_i, r9, 0);
+	loadReg(r9, val3);
+	asm(syscall);
+	return;
+}
+
+func threadJoin(ptr ctid_addr){
+    if ctid_addr == 0 { return; }
+    dq FUTEX_WAIT = 0;
+    while 1 == 1 {
+		dd cur = *<dd>ctid_addr;
+		if cur == 0 { 
+			break; 
+		}
+		sys_futex(ctid_addr, FUTEX_WAIT, cur, 0, 0, 0);
+    }
+}
+
+func sys_thkill(dq pid, dq tid){
+	asm(mov64_r_i, rax, 234); // SYS_tgkill
+	loadReg(rdi, pid);
+	loadReg(rsi, tid);
+	asm(mov64_r_i, rdx, 9); // SIGKILL
+	asm(syscall);
+	return;
+}
+
+func thkill(dq tid){
+	dq pid = getpid();
+	sys_thkill(pid, tid);
+	return;
+}

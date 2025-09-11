@@ -1,7 +1,7 @@
 document.getElementById('current-year').textContent = new Date().getFullYear();
 
 // Default sample code
-const defaultCode = `include("lang/liblang/strings.lang")
+const defaultCode = `include("liblang/strings.lang")
 
 func main() {
     print("Hello, World!\\n");

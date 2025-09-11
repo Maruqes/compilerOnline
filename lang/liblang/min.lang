@@ -1,0 +1,71 @@
+func exit(dq status){
+	asm(mov64_r_i, rax, 60);
+	loadReg(rdi, status);
+	asm(syscall);
+	return;
+}
+
+// Terminate the entire process (all threads)
+func exit_group(dq status){
+	asm(mov64_r_i, rax, 231); // SYS_exit_group
+	loadReg(rdi, status);
+	asm(syscall);
+	return;
+}
+
+
+struct timespec {
+    dq tv_nsec;
+	dq tv_sec;
+}
+
+func nanosleep(dq seconds, dq nanoseconds){
+	ptr ts<timespec> = timespec{nanoseconds, seconds};
+
+	asm(mov64_r_i, rax, 35);
+	loadReg(rdi, ts);
+	asm(mov64_r_i, rsi, 0);
+	asm(syscall);
+	return;
+}
+
+func clock_gettime(ptr ts){
+	asm(mov64_r_i, rax, 228);
+	asm(mov64_r_i, rdi, 0); // CLOCK_REALTIME
+	loadReg(rsi, ts);
+	asm(syscall);
+	return;
+}
+
+func getpid(){
+	dq pid;
+	asm(mov64_r_i, rax, 39); // SYS_getpid
+	asm(syscall);
+	loadVar(pid, rax);
+	return pid;
+}
+
+func getppid(){
+	dq ppid;
+	asm(mov64_r_i, rax, 110); // SYS_getppid
+	asm(syscall);
+	loadVar(ppid, rax);
+	return ppid;
+}
+
+func gettid(){
+	dq tid;
+	asm(mov64_r_i, rax, 186); // SYS_gettid
+	asm(syscall);
+	loadVar(tid, rax);
+	return tid;
+}
+
+func printMem(ptr mem, dq size){
+	dq i = 0;
+	while (i < size) {
+		db b = mem[i];
+		printHex(b);
+	}
+	return;
+}

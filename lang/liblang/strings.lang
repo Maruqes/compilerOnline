@@ -1,0 +1,136 @@
+
+func getStringLen(ptr s1){
+	dd res = 0;
+	while s1[res] != 0 {
+		res++;
+	}
+	return res;
+}
+
+func reverseString(ptr s1){
+	dq len = getStringLen(s1);
+	dq i = 0;
+	dq j = len - 2;    // adjust for \n (-1)  and  zero based (string with len = 1 is str[len-1] str[0]) so -2
+	while i < j {
+		// Swap characters
+		db temp = s1[i];
+		s1[i] = s1[j];
+		s1[j] = temp;
+		i++;
+		j--;
+	}
+	return;
+}
+
+func print(ptr s1){
+	dd len = getStringLen(s1);
+
+	asm(mov64_r_i, rax, 1);
+	asm(mov64_r_i, rdi, 1);
+	loadReg(rsi, s1);
+	loadReg(rdx, len);
+	asm(syscall);
+	return;
+}
+
+func errorf(ptr s1){
+	dd len = getStringLen(s1);
+
+	asm(mov64_r_i, rax, 1);
+	asm(mov64_r_i, rdi, 2);
+	loadReg(rsi, s1);
+	loadReg(rdx, len);
+	asm(syscall);
+	return;
+}
+
+func read(ptr s1, dd n){
+	asm(mov64_r_i, rax, 0);
+	asm(mov64_r_i, rdi, 0);
+	loadReg(rsi, s1);
+	loadReg(rdx, n);
+	asm(syscall);
+	return;
+}
+
+func strcmp(ptr s1, ptr s2){
+	dd len1 = getStringLen(s1);
+	dd len2 = getStringLen(s2);
+
+	if (len1 != len2) {
+		return 0; 
+	}
+	for dd i = 0; i < len1; i++; {
+		if (s1[i] != s2[i]) {
+			return 0; 
+		}
+	}
+	return 1; 
+}
+
+// converte inteiro sem sinal (dq) em decimal ASCII
+// devolve comprimento (dd) da string escrita (sem contar com terminador \0)
+func int_to_string(dq value, ptr buf, dd buf_size) {
+    if (buf_size == 0) {
+        return 0;
+    }
+    if (value == 0) {
+        if (buf_size > 1) {
+            buf[0] = '0';
+            buf[1] = 0; 
+            return 1;
+        } else {
+            buf[0] = 0;  
+            return 0;
+        }
+    }
+
+    // escreve ao contrário
+    dd i = 0;
+    while ((value > 0) && ( i < (buf_size-1))) {
+        dq digit = value % 10;
+        value = value / 10;
+        buf[i] = '0' + digit;
+        i = i + 1;
+    }
+
+    // fecha string
+    buf[i] = 0;
+
+    // inverter a string in-place
+    dd start = 0;
+    dd end = i - 1;
+    while (start < end) {
+        db tmp   = buf[start];
+        buf[start] = buf[end];
+        buf[end]   = tmp;
+        start = start + 1;
+        end   = end - 1;
+    }
+
+    return i;
+}
+
+func string_to_int(ptr str){
+	dq result = 0;
+	dq is_negative = 0;
+	dd i = 0;
+
+	if str[0] == '-' {
+		is_negative = 1;
+		i++;
+	}
+
+	while str[i] != 0 {
+		if str[i] < '0' || str[i] > '9' {
+			break; // stop at first non-digit
+		}
+		result = result * 10 + (str[i] - '0');
+		i++;
+	}
+
+	if is_negative {
+		result = -result;
+	}
+	return result;
+}

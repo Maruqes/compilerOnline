@@ -1,0 +1,134 @@
+// Basic file utilities: open/close, lseek, read, write, determine size, mmap helpers
+
+global{
+    // open(2) flags (Linux x86_64)
+    dq O_RDONLY   = 0;
+    dq O_WRONLY   = 1;
+    dq O_RDWR     = 2;
+    dq O_CREAT    = 64;
+    dq O_EXCL     = 128;
+    dq O_NOCTTY   = 256;
+    dq O_TRUNC    = 512;
+    dq O_APPEND   = 1024;
+    dq O_NONBLOCK = 2048;
+    dq O_DSYNC    = 4096;
+    dq O_ASYNC    = 8192;
+    dq O_DIRECT   = 16384;
+    dq O_LARGEFILE= 32768;
+    dq O_DIRECTORY= 65536;
+    dq O_NOFOLLOW = 131072;
+    dq O_NOATIME  = 262144;
+    dq O_CLOEXEC  = 524288;
+
+    // lseek(2) whence
+    dq SEEK_SET = 0;
+    dq SEEK_CUR = 1;
+    dq SEEK_END = 2;
+    dq SEEK_DATA = 3;
+    dq SEEK_HOLE = 4;
+}
+
+struct Stat{ // minimal subset for size (offset 48 on x86_64 but we'll read via fstat syscall into this layout)
+    dq _pad1 dq<6>; // device/inode/mode/etc (simplified placeholder)
+    dq size;        // we only care about st_size (approx position)
+    dq _rest dq<7>; // padding to keep struct large enough
+}
+
+// open(path, flags, mode)
+func sys_open(ptr path, dq flags, dq mode){
+    asm(mov64_r_i, rax, 2);
+    loadReg(rdi, path);
+    loadReg(rsi, flags);
+    loadReg(rdx, mode);
+    asm(syscall);
+    return;
+}
+
+
+
+// lseek(fd, offset, whence)
+func sys_lseek(dq fd, dq offset, dq whence){
+    asm(mov64_r_i, rax, 8);
+    loadReg(rdi, fd);
+    loadReg(rsi, offset);
+    loadReg(rdx, whence);
+    asm(syscall);
+    return;
+}
+
+func get_seek_pos(dq fd){
+    return sys_lseek(fd, 0, SEEK_CUR);
+}
+
+func check_eof(dq fd){
+    dq pos = sys_lseek(fd, 0, SEEK_CUR);
+    dq end = sys_lseek(fd, 0, SEEK_END);
+    dq _ = sys_lseek(fd, pos, SEEK_SET);
+    if pos >= end { return 1; }
+    return 0;
+}
+
+// Get file size (keeps original position)
+func file_size_fd(dq fd){
+    dq cur = sys_lseek(fd, 0, SEEK_CUR);
+    dq end = sys_lseek(fd, 0, SEEK_END);
+    dq _ = sys_lseek(fd, cur, SEEK_SET);
+    return end;
+}
+
+// Write the full buffer (handles short writes). Returns total written or -1.
+func write_all(dq fd, ptr buf, dq len){
+    dq total = 0;
+    while (total < len) {
+        dq n = sys_write(fd, buf + total, len - total);
+        if (n <= 0) { return -1; }
+        total = total + n;
+    }
+    return total;
+}
+
+// Read exactly len bytes unless EOF; returns bytes read or -1 on error.
+func read_all(dq fd, ptr buf, dq len){
+    dq total = 0;
+    while (total < len) {
+        dq n = sys_read(fd, buf + total, len - total);
+        if (n < 0) { return -1; }
+        if (n == 0) { break; }
+        total = total + n;
+    }
+    return total;
+}
+
+// Append helper: seek to end then write_all
+func append_all(dq fd, ptr buf, dq len){
+    dq _ = sys_lseek(fd, 0, SEEK_END);
+    return write_all(fd, buf, len);
+}
+
+// Returns pointer to buffer (mmap) and length via out pointer
+func readFileToMmap(ptr path, ptr out_len){
+    dq fd = sys_open(path, O_RDONLY, 0);
+    if fd < 0 { return 0; }
+
+    // Determine size via lseek
+    dq cur = sys_lseek(fd, 0, SEEK_CUR);
+    dq fsize = sys_lseek(fd, 0, SEEK_END);
+    if fsize <= 0 { sys_close(fd); return 0; }
+    // rewind
+    dq back = sys_lseek(fd, cur, SEEK_SET);
+
+    // number of pages needed
+    dq pages = fsize / 4096;
+    if (fsize % 4096) != 0 { pages = pages + 1; }
+    ptr buf = mmap(pages);
+    if buf == 0 { sys_close(fd); return 0; }
+
+    dq r = sys_read(fd, buf, fsize);
+    // Add NUL terminator if space available
+    if r == fsize { buf[fsize] = 0; }
+    sys_close(fd);
+    if r != fsize { return 0; }
+
+    if out_len != 0 { *<dq>out_len = fsize; }
+    return buf;
+}

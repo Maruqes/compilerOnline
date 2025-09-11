@@ -1,0 +1,130 @@
+
+global{
+	dq AF_INET = 2;
+	dq SOCK_STREAM = 1;
+	dq IPPROTO_TCP = 6;
+	dq MSG_NOSIGNAL = 0x4000; 
+
+
+	dq SOL_SOCKET = 1;
+	dq SO_REUSEADDR = 2;
+}
+
+
+//compiler interprets struct fields in reverse order for some reason ;D (i know the reason)
+struct sockaddr_in{
+	 db zero db<8>;// padding
+	 dd addr;      // network order (e.g. 0x7F000001 for 127.0.0.1)
+	 dw port;      // network order
+	 dw family;    // AF_INET
+}
+
+
+// Byte order helpers (host -> network). Host assumed little-endian x86_64.
+func htons(dq v){
+	dq r = ((v & 0xff) << 8) | ((v >> 8) & 0xff);
+	return r;
+}
+
+func htonl(dq v){
+	dq b1 = (v & 0x000000ff) << 24;
+	dq b2 = (v & 0x0000ff00) << 8;
+	dq b3 = (v & 0x00ff0000) >> 8;
+	dq b4 = (v & 0xff000000) >> 24;
+	dq r = b1 | b2 | b3 | b4;
+	return r;
+}
+
+func sys_socket(dq AF_INET, dq SOCK_STREAM, dq IPPROTO_TCP){
+	asm(mov64_r_i, rax, 41);
+	loadReg(rdi, AF_INET);
+	loadReg(rsi, SOCK_STREAM);
+	loadReg(rdx, IPPROTO_TCP);
+	asm(syscall);
+	return;
+}
+
+func sys_connect(dq sockfd, ptr serv_addr, dq addrlen){
+	asm(mov64_r_i, rax, 42);
+	loadReg(rdi, sockfd);
+	loadReg(rsi, serv_addr);
+	loadReg(rdx, addrlen);
+	asm(syscall);
+	return;
+}
+
+
+func sys_read(dq fd, ptr buf, dq count){
+	asm(mov64_r_i, rax, 0);
+	loadReg(rdi, fd);
+	loadReg(rsi, buf);
+	loadReg(rdx, count);
+	asm(syscall);
+	return;
+}
+
+func sys_write(dq fd, ptr buf, dq count){
+	asm(mov64_r_i, rax, 1);
+	loadReg(rdi, fd);
+	loadReg(rsi, buf);
+	loadReg(rdx, count);
+	asm(syscall);
+	return;
+}
+
+// send using sendto syscall with flags (e.g., MSG_NOSIGNAL). dest null for connected stream.
+func sys_send(dq fd, ptr buf, dq len, dq flags){
+	asm(mov64_r_i, rax, 44); // sendto
+	loadReg(rdi, fd);
+	loadReg(rsi, buf);
+	loadReg(rdx, len);
+	loadReg(r10, flags);
+	asm(mov64_r_i, r8, 0);  // dest_addr
+	asm(mov64_r_i, r9, 0);  // addrlen
+	asm(syscall);
+	return;
+}
+
+func sys_close(dq fd){
+	asm(mov64_r_i, rax, 3);
+	loadReg(rdi, fd);
+	asm(syscall);
+	return;
+}
+
+func sys_setsockopt(dq sockfd, dq level, dq optname, ptr optval, dq optlen){
+	asm(mov64_r_i, rax, 54);
+	loadReg(rdi, sockfd);
+	loadReg(rsi, level);
+	loadReg(rdx, optname);
+	loadReg(r10, optval);
+	loadReg(r8, optlen);
+	asm(syscall);
+	return;
+}
+
+func sys_bind(dq sockfd, ptr addr, dq addrlen){
+	asm(mov64_r_i, rax, 49);
+	loadReg(rdi, sockfd);
+	loadReg(rsi, addr);
+	loadReg(rdx, addrlen);
+	asm(syscall);
+	return;
+}
+
+func sys_accept(dq sockfd, ptr addr, ptr addrlen){
+	asm(mov64_r_i, rax, 43);
+	loadReg(rdi, sockfd);
+	loadReg(rsi, addr);
+	loadReg(rdx, addrlen);
+	asm(syscall);
+	return;
+}
+
+func sys_listen(dq sockfd, dq backlog){
+	asm(mov64_r_i, rax, 50);
+	loadReg(rdi, sockfd);
+	loadReg(rsi, backlog);
+	asm(syscall);
+	return;
+}
