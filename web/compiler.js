@@ -1,13 +1,9 @@
 document.getElementById('current-year').textContent = new Date().getFullYear();
 
-// Default sample code
-const defaultCode = `include("liblang/strings.lang")
+// Default sample code (fallback)
+const defaultCode = `include("liblang/strings.lang")\n\nfunc main() {\n    print("Hello, World!\\n");\n    return;\n}\n`;
 
-func main() {
-    print("Hello, World!\\n");
-    return;
-}
-`;
+let activeExampleKey = null; // track which example loaded
 
 // Monaco setup
 const amdRequire = window.require;
@@ -150,7 +146,64 @@ amdRequire(['vs/editor/editor.main'], function () {
 		automaticLayout: true,
 		wordWrap: 'on',
 	});
+
+	// After editor ready populate examples sidebar
+	initializeExampleSidebar();
 });
+
+function initializeExampleSidebar() {
+	const list = document.getElementById('examplesList');
+	if (!list || !window.codeExamples) return;
+
+	// Flatten examples object -> array
+	const examples = Object.entries(window.codeExamples).map(([key, obj]) => ({ key, title: obj.title, code: obj.code }));
+
+	// Sort alphabetically by title
+	examples.sort((a, b) => a.title.localeCompare(b.title));
+
+	list.innerHTML = '';
+	for (const ex of examples) {
+		const li = document.createElement('li');
+		li.className = 'group px-3 py-2 cursor-pointer hover:bg-slate-800/60 transition-colors flex flex-col gap-0.5';
+		li.setAttribute('data-title', ex.title.toLowerCase());
+		li.innerHTML = `<div class="flex items-center justify-between"><span class="font-medium text-slate-200">${ex.title}</span><button class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800/70 border border-slate-700/60 text-slate-400 group-hover:border-fuchsia-600/40 group-hover:text-fuchsia-300 group-hover:bg-fuchsia-600/10">Load</button></div><div class="text-[10px] text-slate-500 truncate font-mono">${escapeSnippet(ex.code)}</div>`;
+		li.addEventListener('click', () => loadExample(ex.key));
+		list.appendChild(li);
+	}
+}
+
+function escapeSnippet(code) {
+	return code.replace(/\n/g, ' ').replace(/</g, '&lt;').slice(0, 70) + (code.length > 70 ? '…' : '');
+}
+
+function loadExample(key) {
+	if (!window.codeExamples || !window.codeExamples[key]) return;
+	const { code, title } = window.codeExamples[key];
+	if (window.editor) {
+		window.editor.setValue(code.trim() + '\n');
+		activeExampleKey = key;
+		const tag = document.getElementById('activeExampleTag');
+		if (tag) {
+			tag.textContent = title;
+			tag.classList.remove('hidden');
+		}
+		highlightActiveExample(key);
+		statusEl.textContent = 'idle';
+		outputEl.textContent = '';
+	}
+}
+
+function highlightActiveExample(key) {
+	const list = document.getElementById('examplesList');
+	if (!list) return;
+	const targetTitle = window.codeExamples[key]?.title;
+	Array.from(list.children).forEach(li => {
+		const match = targetTitle && (li.querySelector('span')?.textContent === targetTitle);
+		li.classList.toggle('bg-slate-800/70', match);
+		li.classList.toggle('ring-1', match);
+		li.classList.toggle('ring-fuchsia-600/40', match);
+	});
+}
 
 async function compile(code) {
 	const res = await fetch('/compile', {
@@ -186,6 +239,10 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 	if (window.editor) window.editor.setValue(defaultCode);
 	outputEl.textContent = '';
 	statusEl.textContent = 'idle';
+	activeExampleKey = null;
+	const tag = document.getElementById('activeExampleTag');
+	if (tag) { tag.classList.add('hidden'); tag.textContent = ''; }
+	highlightActiveExample('__none__');
 });
 
 // minimal custom cursor support to match site
@@ -203,3 +260,36 @@ document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.c
 document.addEventListener('mouseleave', () => { cursor.style.opacity = '0'; });
 document.addEventListener('mouseenter', () => { cursor.style.opacity = '0.8'; });
 updateCursor();
+
+// Expose loadExample globally for potential future deep-linking
+window.loadExample = loadExample;
+
+// Focus mode toggle to maximize editor width
+document.addEventListener('DOMContentLoaded', () => {
+	const focusBtn = document.getElementById('focusToggle');
+	if(!focusBtn) return;
+	let focused = false;
+	focusBtn.addEventListener('click', () => {
+		focused = !focused;
+		const examples = document.getElementById('examplesSidebar');
+		const output = document.getElementById('outputPanel');
+		const grid = document.getElementById('layoutGrid');
+		if(focused){
+			examples?.classList.add('hidden');
+			output?.classList.add('hidden');
+			grid?.classList.remove('lg:grid-cols-[12rem_minmax(0,1fr)_16rem]');
+			grid?.classList.add('lg:grid-cols-[1fr]');
+			focusBtn.textContent = 'Unfocus';
+		} else {
+			examples?.classList.remove('hidden');
+			output?.classList.remove('hidden');
+			grid?.classList.remove('lg:grid-cols-[1fr]');
+			grid?.classList.add('lg:grid-cols-[12rem_minmax(0,1fr)_16rem]');
+			focusBtn.textContent = 'Focus';
+		}
+		// Trigger layout for monaco
+		if(window.editor){
+			setTimeout(()=>window.editor.layout(), 60);
+		}
+	});
+});

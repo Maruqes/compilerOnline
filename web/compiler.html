@@ -15,74 +15,99 @@
 	<link rel="stylesheet" href="site.css" />
 	<!-- Monaco Editor loader -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.47.0/min/vs/loader.min.js"></script>
+	<!-- Examples + Prism core (if needed) -->
+	<script src="examples.js" defer></script>
 </head>
 
 <body class="min-h-full bg-slate-950 text-slate-100 antialiased selection:bg-fuchsia-600/40 selection:text-fuchsia-100">
 	<div class="custom-cursor" id="cursor"></div>
 
-	<header class="sticky top-0 z-50 backdrop-blur-sm bg-slate-950/90 border-b border-slate-800/30">
-		<div class="max-w-6xl mx-auto px-6 h-16">
-			<div class="flex items-center justify-between h-full">
-				<div class="flex items-center gap-3">
-					<img src="https://github.com/Maruqes.png" alt="Maruqes" class="w-8 h-8 rounded-md object-cover">
-					<div>
-						<span class="text-lg font-bold text-white">512lang</span>
-						<span class="ml-2 text-sm text-slate-400">by Maruqes</span>
-					</div>
-				</div>
-				<div class="flex items-center gap-3">
-					<a href="/"
-						class="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-md transition-colors">Home</a>
-					<a href="https://github.com/Maruqes/compiler" target="_blank" rel="noopener noreferrer"
-						class="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-md transition-colors">GitHub</a>
-				</div>
-			</div>
-		</div>
-	</header>
+	<div id="site-header"></div>
 
-	<main class="max-w-7xl mx-auto px-5 py-8">
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-			<!-- Editor Panel -->
-			<section class="bg-slate-900/80 border border-slate-800/60 rounded-lg overflow-hidden">
+	<main class="max-w-7xl mx-auto px-5 py-6">
+		<!-- 3-column layout on large screens: examples | editor | output -->
+		<div class="flex flex-col gap-6 lg:grid lg:grid-cols-[12rem_minmax(0,1fr)_16rem]" id="layoutGrid">
+			<!-- Examples Sidebar (Left) -->
+			<aside id="examplesSidebar"
+				class="bg-slate-900/60 border border-slate-800/60 rounded-lg flex flex-col overflow-hidden backdrop-blur-sm order-1">
+				<div class="px-4 py-3 border-b border-slate-700/60 flex items-center justify-between">
+					<h2 class="text-sm font-semibold tracking-wide text-slate-200">Examples</h2>
+					<button id="collapseExamples" class="lg:hidden text-slate-400 hover:text-slate-200"
+						aria-label="Toggle examples">
+						<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+							viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
+						</svg>
+					</button>
+				</div>
+				<div class="p-3 border-b border-slate-800/40">
+					<input id="exampleSearch" type="text" placeholder="Search…"
+						class="w-full text-xs px-2.5 py-1.5 rounded-md bg-slate-800/70 border border-slate-700/70 focus:outline-none focus:ring-1 focus:ring-fuchsia-600 placeholder-slate-500" />
+				</div>
+				<ul id="examplesList" class="flex-1 overflow-auto py-2 text-xs divide-y divide-slate-800/40"></ul>
+				<div
+					class="p-3 text-[10px] leading-relaxed text-slate-500 bg-slate-950/40 border-t border-slate-800/60">
+					Click an example to load it into the editor. Modifying the code won’t change the original sample.
+				</div>
+			</aside>
+
+			<!-- Editor (Center) -->
+			<section id="editorPanel"
+				class="bg-slate-900/80 border border-slate-800/60 rounded-lg overflow-hidden flex flex-col order-2 min-h-[70vh]">
 				<div class="flex items-center justify-between px-4 py-2 bg-slate-800/60 border-b border-slate-700/60">
-					<span class="text-sm text-slate-300 font-mono">editor.512</span>
-					<div class="flex gap-2">
+					<div class="flex items-center gap-3">
+						<span class="text-sm text-slate-300 font-mono">editor.512</span>
+						<span id="activeExampleTag"
+							class="hidden text-xs px-2 py-0.5 rounded bg-fuchsia-600/20 text-fuchsia-300 border border-fuchsia-600/30"></span>
+					</div>
+					<div class="flex items-center gap-2">
+						<button id="focusToggle"
+							class="px-2 py-1 text-xs rounded-md border border-slate-600 hover:border-fuchsia-600 text-slate-300">Focus</button>
 						<button id="runBtn"
 							class="px-3 py-1.5 text-sm rounded-md bg-fuchsia-600 hover:bg-fuchsia-500 text-white">Compile</button>
 						<button id="resetBtn"
 							class="px-3 py-1.5 text-sm rounded-md border border-slate-600 hover:border-slate-500 text-slate-200">Reset</button>
 					</div>
 				</div>
-				<div id="editor" style="height: 70vh" class="font-mono"></div>
+				<div id="editor" class="font-mono flex-1" style="height:65vh"></div>
 			</section>
 
-			<!-- Output Panel -->
-			<section class="bg-slate-900/80 border border-slate-800/60 rounded-lg overflow-hidden">
+			<!-- Output Panel (Right) -->
+			<section id="outputPanel"
+				class="bg-slate-900/80 border border-slate-800/60 rounded-lg overflow-hidden flex flex-col order-3 min-h-[70vh]">
 				<div class="flex items-center justify-between px-4 py-2 bg-slate-800/60 border-b border-slate-700/60">
 					<span class="text-sm text-slate-300 font-mono">output</span>
 					<div class="text-xs text-slate-500" id="status">idle</div>
 				</div>
-				<div class="p-4">
+				<div class="p-4 overflow-auto flex-1">
 					<pre id="output" class="text-sm text-slate-300 font-mono leading-relaxed whitespace-pre-wrap"></pre>
 				</div>
 			</section>
 		</div>
 	</main>
 
-	<footer class="border-t border-slate-800/30 bg-slate-950/90 backdrop-blur-sm">
-		<div class="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
-			<div class="flex items-center gap-3">
-				<img src="https://github.com/Maruqes.png" alt="Maruqes" class="w-6 h-6 rounded-md object-cover">
-				<div>
-					<span class="text-sm font-bold text-white">512lang</span>
-					<span class="ml-2 text-xs text-slate-400">by Maruqes</span>
-				</div>
-			</div>
-			<div class="text-xs text-slate-500">© <span id="current-year">2025</span> 512lang</div>
-		</div>
-	</footer>
+	<div id="site-footer"></div>
 
-	<script src="compiler.js"></script>
+	<script src="shared.js"></script>
+	<script src="compiler.js" defer></script>
+	<script>injectLayout('compiler');</script>
+	<script>
+		// Smooth scroll to examples for mobile if sidebar appears below
+		document.addEventListener('DOMContentLoaded', () => {
+			const search = document.getElementById('exampleSearch');
+			const list = document.getElementById('examplesList');
+			if (!search || !list) return;
+
+			search.addEventListener('input', () => {
+				const q = search.value.toLowerCase();
+				const items = list.querySelectorAll('li');
+				items.forEach(li => {
+					const txt = li.getAttribute('data-title') || '';
+					li.style.display = txt.includes(q) ? '' : 'none';
+				});
+			});
+		});
+	</script>
 </body>
 
 </html>
