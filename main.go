@@ -17,6 +17,8 @@ func compileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("Received code for compilation:", code)
+
 	// output, err := compile(code)
 	// if err != nil {
 	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -24,18 +26,6 @@ func compileHandler(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	// w.Write([]byte(output))
-}
-
-func serveFile(filename string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := os.ReadFile(filepath.Join("compilerFile", filename))
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Error reading file: %v", err), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "text/plain")
-		w.Write(data)
-	}
 }
 
 func main() {
