@@ -26,4 +26,4 @@ go.work.sum
 
 
 .vscode/
-data/containers.db
+data/*

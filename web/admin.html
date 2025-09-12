@@ -27,38 +27,71 @@
 				</div>
 			</div>
 
-			<!-- Dashboard Grid -->
-			<div class="grid gap-8 lg:grid-cols-2">
+			<!-- View Toggle -->
+			<div class="flex justify-center gap-4 mb-10">
+				<button id="btnStatus"
+					class="px-5 py-2 rounded-lg text-sm font-semibold bg-fuchsia-600 text-white shadow shadow-fuchsia-600/30 focus:outline-none focus:ring-2 focus:ring-fuchsia-500 transition-all">Status</button>
+				<button id="btnLogs"
+					class="px-5 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700/70 focus:outline-none focus:ring-2 focus:ring-fuchsia-500 transition-all">Logs</button>
+			</div>
 
-				<!-- Stats Card -->
+			<!-- Views -->
+			<div id="view-status" class="space-y-10">
+				<div class="grid gap-8 md:grid-cols-3">
+					<!-- Stat Cards -->
+					<div class="bg-slate-900/70 border border-slate-800/60 rounded-lg p-5 flex flex-col gap-2">
+						<h4 class="text-sm uppercase tracking-wide text-slate-400">Last Update</h4>
+						<div id="statTimestamp" class="font-mono text-fuchsia-300 text-xs break-all">--</div>
+					</div>
+					<div class="bg-slate-900/70 border border-slate-800/60 rounded-lg p-5 flex flex-col gap-2">
+						<h4 class="text-sm uppercase tracking-wide text-slate-400">Containers</h4>
+						<div class="text-3xl font-bold text-fuchsia-400" id="statContainerCount">0</div>
+					</div>
+					<div class="bg-slate-900/70 border border-slate-800/60 rounded-lg p-5 flex flex-col gap-2">
+						<h4 class="text-sm uppercase tracking-wide text-slate-400">History Loaded</h4>
+						<div class="text-3xl font-bold text-fuchsia-400" id="historyCount">0</div>
+					</div>
+				</div>
+
+				<!-- Container List -->
 				<div class="glow">
-					<div class="bg-slate-900/80 backdrop-blur-sm border border-slate-800/60 rounded-lg overflow-hidden">
+					<div class="bg-slate-900/80 border border-slate-800/60 rounded-lg overflow-hidden">
 						<div
 							class="px-6 py-4 bg-slate-800/60 border-b border-slate-700/60 flex items-center justify-between">
-							<h3 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+							<h3 class="text-lg font-semibold flex items-center gap-2 text-slate-200">
 								<svg class="w-5 h-5 text-fuchsia-500" fill="none" stroke="currentColor"
 									viewBox="0 0 24 24">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-										d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+										d="M3 7h18M3 12h18M3 17h18" />
 								</svg>
-								System Stats
+								Active / Recent Containers
 							</h3>
-							<button onclick="loadStats()" class="px-3 py-1.5 text-sm bg-fuchsia-600/20 hover:bg-fuchsia-600/30 
-									   text-fuchsia-300 border border-fuchsia-600/30 hover:border-fuchsia-500/50 
-									   rounded-lg transition-all">
-								Refresh
-							</button>
+							<button onclick="loadStats()"
+								class="px-3 py-1.5 text-sm bg-fuchsia-600/20 hover:bg-fuchsia-600/30 text-fuchsia-300 border border-fuchsia-600/30 hover:border-fuchsia-500/50 rounded-lg transition-all">Refresh</button>
 						</div>
-						<div class="p-6">
-							<pre id="stats" class="bg-slate-950/60 text-slate-300 p-4 rounded-lg overflow-x-auto text-sm 
-									   font-mono leading-relaxed border border-slate-800/40 min-h-[200px]">Loading...</pre>
+						<div class="p-0 overflow-x-auto">
+							<table class="min-w-full text-sm text-left font-mono" id="containersTable">
+								<thead class="bg-slate-800/60 text-slate-300 text-xs uppercase">
+									<tr>
+										<th class="px-4 py-2">ID</th>
+										<th class="px-4 py-2">Timestamp</th>
+										<th class="px-4 py-2">Status</th>
+										<th class="px-4 py-2">Runtime</th>
+									</tr>
+								</thead>
+								<tbody id="containersBody" class="divide-y divide-slate-800">
+									<tr>
+										<td colspan="4" class="px-4 py-4 text-slate-500 text-center">Loading...</td>
+									</tr>
+								</tbody>
+							</table>
 						</div>
 					</div>
 				</div>
 
-				<!-- History Card -->
-				<div class="glow lg:col-span-2">
-					<div class="bg-slate-900/80 backdrop-blur-sm border border-slate-800/60 rounded-lg overflow-hidden">
+				<!-- History -->
+				<div class="glow">
+					<div class="bg-slate-900/80 border border-slate-800/60 rounded-lg overflow-hidden">
 						<div
 							class="px-6 py-4 bg-slate-800/60 border-b border-slate-700/60 flex items-center justify-between flex-wrap gap-4">
 							<h3 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
@@ -70,74 +103,78 @@
 								Request History
 							</h3>
 							<div class="flex items-center gap-3">
-								<div class="flex items-center gap-2">
-									<label for="limit" class="text-sm text-slate-300">Limit:</label>
-									<input type="number" id="limit" value="25" min="1" max="500" class="w-20 px-2 py-1 text-sm bg-slate-800/70 border border-slate-700/70 
-											   rounded-md focus:outline-none focus:ring-1 focus:ring-fuchsia-600 
-											   text-slate-100" />
-								</div>
-								<button onclick="loadHistory()" class="px-3 py-1.5 text-sm bg-fuchsia-600/20 hover:bg-fuchsia-600/30 
-										   text-fuchsia-300 border border-fuchsia-600/30 hover:border-fuchsia-500/50 
-										   rounded-lg transition-all">
-									Refresh
-								</button>
+								<label class="flex items-center gap-2 text-sm text-slate-300">Limit:
+									<input type="number" id="limit" value="25" min="1" max="500"
+										class="w-24 px-2 py-1 text-sm bg-slate-800/70 border border-slate-700/70 rounded-md focus:outline-none focus:ring-1 focus:ring-fuchsia-600 text-slate-100" />
+								</label>
+								<button onclick="loadHistory()"
+									class="px-3 py-1.5 text-sm bg-fuchsia-600/20 hover:bg-fuchsia-600/30 text-fuchsia-300 border border-fuchsia-600/30 hover:border-fuchsia-500/50 rounded-lg transition-all">Refresh</button>
 							</div>
 						</div>
-						<div class="p-6">
-							<pre id="history" class="bg-slate-950/60 text-slate-300 p-4 rounded-lg overflow-x-auto text-sm 
-									   font-mono leading-relaxed border border-slate-800/40 min-h-[300px] max-h-[600px] 
-									   overflow-y-auto">Loading...</pre>
+						<div class="p-0 overflow-x-auto">
+							<table class="min-w-full text-xs text-left font-mono" id="historyTable">
+								<thead class="bg-slate-800/60 text-slate-300 uppercase">
+									<tr>
+										<th class="px-4 py-2">Container</th>
+										<th class="px-4 py-2">Created</th>
+										<th class="px-4 py-2">Finished</th>
+										<th class="px-4 py-2">Duration(ms)</th>
+										<th class="px-4 py-2">Error</th>
+									</tr>
+								</thead>
+								<tbody id="historyBody" class="divide-y divide-slate-800">
+									<tr>
+										<td colspan="5" class="px-4 py-4 text-slate-500 text-center">Loading...</td>
+									</tr>
+								</tbody>
+							</table>
 						</div>
 					</div>
 				</div>
-
 			</div>
 
-			<!-- Logs Section -->
-			<div class="mt-8">
+			<div id="view-logs" class="hidden space-y-8">
 				<div class="glow">
-					<div class="bg-slate-900/80 backdrop-blur-sm border border-slate-800/60 rounded-lg overflow-hidden">
+					<div class="bg-slate-900/80 border border-slate-800/60 rounded-lg overflow-hidden">
 						<div
 							class="px-6 py-4 bg-slate-800/60 border-b border-slate-700/60 flex items-center justify-between flex-wrap gap-4">
 							<h3 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
-								<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor"
+								<svg class="w-5 h-5 text-fuchsia-500" fill="none" stroke="currentColor"
 									viewBox="0 0 24 24">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-										d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+										d="M9 17v-2m3 2v-4m3 4V9m-6 6V9m3 4V9m3 8a2 2 0 01-2 2H8a2 2 0 01-2-2V7a2 2 0 012-2h8a2 2 0 012 2v10z" />
 								</svg>
-								System Logs
+								Logs
 							</h3>
-							<div class="flex gap-2 items-center">
-								<select id="logLevel" class="px-3 py-1.5 text-sm bg-slate-700 text-slate-200 border border-slate-600 
-										   rounded-lg">
-									<option value="">All Levels</option>
-									<option value="DEBUG">Debug</option>
-									<option value="INFO">Info</option>
-									<option value="WARN">Warn</option>
-									<option value="ERROR">Error</option>
-									<option value="FATAL">Fatal</option>
-								</select>
-								<input type="number" id="logLimit" placeholder="Limit" min="10" max="1000" value="100"
-									class="w-20 px-3 py-1.5 text-sm bg-slate-700 text-slate-200 border border-slate-600 
-									   rounded-lg">
-								<button onclick="loadLogs()" class="px-3 py-1.5 text-sm bg-blue-600/20 hover:bg-blue-600/30 
-										   text-blue-300 border border-blue-600/30 hover:border-blue-500/50 
-										   rounded-lg transition-all">
-									Refresh
-								</button>
+							<div class="flex items-center gap-3">
+								<label class="flex items-center gap-2 text-sm text-slate-300">Limit:
+									<input type="number" id="logsLimit" value="100" min="1" max="1000"
+										class="w-28 px-2 py-1 text-sm bg-slate-800/70 border border-slate-700/70 rounded-md focus:outline-none focus:ring-1 focus:ring-fuchsia-600 text-slate-100" />
+								</label>
+								<button onclick="loadLogs()"
+									class="px-3 py-1.5 text-sm bg-fuchsia-600/20 hover:bg-fuchsia-600/30 text-fuchsia-300 border border-fuchsia-600/30 hover:border-fuchsia-500/50 rounded-lg transition-all">Refresh</button>
 							</div>
 						</div>
-						<div class="p-6">
-							<div class="mb-4">
-								<div id="logStats" class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm"></div>
-							</div>
-							<div class="bg-slate-950/60 rounded-lg overflow-hidden border border-slate-800/40">
-								<div id="logs" class="p-4 text-sm font-mono leading-relaxed text-slate-300 min-h-[400px] 
-									   max-h-[600px] overflow-y-auto">Loading...</div>
-							</div>
+						<div class="p-0 overflow-x-auto">
+							<table class="min-w-full text-xs font-mono" id="logsTable">
+								<thead class="bg-slate-800/60 text-slate-300 uppercase">
+									<tr>
+										<th class="px-4 py-2 text-left">Time</th>
+										<th class="px-4 py-2 text-left">Level</th>
+										<th class="px-4 py-2 text-left">Message</th>
+										<th class="px-4 py-2 text-left">Caller</th>
+									</tr>
+								</thead>
+								<tbody id="logsBody" class="divide-y divide-slate-800">
+									<tr>
+										<td colspan="4" class="px-4 py-4 text-slate-500 text-center">Loading...</td>
+									</tr>
+								</tbody>
+							</table>
 						</div>
 					</div>
 				</div>
+				<div class="text-xs text-slate-500 font-mono" id="logsMeta"></div>
 			</div>
 
 			<!-- Status Footer -->
@@ -155,204 +192,131 @@
 		</div>
 	</div>
 	<script>
-		// Try to use token from sessionStorage (optional) if present; cookie already sent automatically.
 		function authHeaders() {
 			const t = sessionStorage.getItem('admintoken');
 			return t ? { 'Authorization': 'Bearer ' + t } : {};
 		}
 
+		// View toggle
+		const btnStatus = document.getElementById('btnStatus');
+		const btnLogs = document.getElementById('btnLogs');
+		const viewStatus = document.getElementById('view-status');
+		const viewLogs = document.getElementById('view-logs');
+
+		function activate(btn) {
+			[btnStatus, btnLogs].forEach(b => {
+				b.classList.remove('bg-fuchsia-600', 'text-white', 'shadow-fuchsia-600/30');
+				b.classList.add('bg-slate-800', 'text-slate-200', 'border', 'border-slate-700');
+			});
+			btn.classList.add('bg-fuchsia-600', 'text-white');
+			btn.classList.remove('bg-slate-800', 'text-slate-200', 'border', 'border-slate-700');
+		}
+
+		btnStatus.addEventListener('click', () => {
+			viewStatus.classList.remove('hidden');
+			viewLogs.classList.add('hidden');
+			activate(btnStatus);
+			startAutoRefresh();
+		});
+		btnLogs.addEventListener('click', () => {
+			viewLogs.classList.remove('hidden');
+			viewStatus.classList.add('hidden');
+			activate(btnLogs);
+			stopAutoRefresh();
+			loadLogs();
+		});
+
+		// Rendering helpers
+		function fmtTime(t) {
+			if (!t) return '-';
+			try { return new Date(t).toLocaleTimeString(); } catch { return t; }
+		}
+		function esc(s) { return (s || '').toString().replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+
 		async function loadStats() {
-			const statsEl = document.getElementById('stats');
-			statsEl.textContent = 'Loading...';
-
+			const body = document.getElementById('containersBody');
+			body.innerHTML = '<tr><td colspan="4" class="px-4 py-3 text-slate-500">Loading...</td></tr>';
 			try {
-				const r = await fetch('/stats', {
-					headers: { 'Accept': 'application/json', ...authHeaders() }
-				});
-
-				if (r.status === 401) {
-					window.location = '/adminLogin';
-					return;
-				}
-
-				if (!r.ok) {
-					throw new Error(`${r.status} ${r.statusText}`);
-				}
-
+				const r = await fetch('/stats', { headers: { 'Accept': 'application/json', ...authHeaders() } });
+				if (r.status === 401) { window.location = '/adminLogin'; return; }
+				if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
 				const data = await r.json();
-				statsEl.textContent = JSON.stringify(data, null, 2);
-
+				document.getElementById('statTimestamp').textContent = data.timestamp || '-';
+				document.getElementById('statContainerCount').textContent = data.container_count ?? 0;
+				if (Array.isArray(data.containers) && data.containers.length) {
+					body.innerHTML = data.containers.map(c => `<tr class="hover:bg-slate-800/40">\n<td class="px-4 py-2 max-w-[160px] truncate" title="${esc(c.container_id)}">${esc(c.container_id)}</td>\n<td class="px-4 py-2">${esc(c.timestamp)}</td>\n<td class="px-4 py-2">${esc(c.status || '-')}</td>\n<td class="px-4 py-2">${esc(c.runtime || '-')}</td>\n</tr>`).join('');
+				} else {
+					body.innerHTML = '<tr><td colspan="4" class="px-4 py-3 text-slate-500">No containers</td></tr>';
+				}
 			} catch (e) {
-				statsEl.textContent = `❌ Error loading stats:\n${e.message}`;
-				statsEl.classList.add('text-red-300');
+				body.innerHTML = `<tr><td colspan="4" class="px-4 py-3 text-red-400">Erro: ${esc(e.message)}</td></tr>`;
 			}
 		}
 
 		async function loadHistory() {
 			const limit = document.getElementById('limit').value || 25;
-			const historyEl = document.getElementById('history');
-			historyEl.textContent = 'Loading...';
-
+			const body = document.getElementById('historyBody');
+			body.innerHTML = '<tr><td colspan="5" class="px-4 py-3 text-slate-500">Loading...</td></tr>';
 			try {
-				const r = await fetch(`/history?limit=${encodeURIComponent(limit)}`, {
-					headers: { 'Accept': 'application/json', ...authHeaders() }
-				});
-
-				if (r.status === 401) {
-					window.location = '/adminLogin';
-					return;
-				}
-
-				if (!r.ok) {
-					throw new Error(`${r.status} ${r.statusText}`);
-				}
-
+				const r = await fetch(`/history?limit=${encodeURIComponent(limit)}`, { headers: { 'Accept': 'application/json', ...authHeaders() } });
+				if (r.status === 401) { window.location = '/adminLogin'; return; }
+				if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
 				const data = await r.json();
-				historyEl.textContent = JSON.stringify(data, null, 2);
-
+				document.getElementById('historyCount').textContent = data.count ?? 0;
+				if (Array.isArray(data.containers) && data.containers.length) {
+					body.innerHTML = data.containers.map(c => {
+						const durMs = c.execution_time ? Math.round(c.execution_time / 1e6) : '-';
+						return `<tr class="align-top hover:bg-slate-800/40">\n<td class="px-4 py-2 max-w-[160px] truncate" title="${esc(c.container_id)}">${esc(c.container_id)}</td>\n<td class="px-4 py-2 whitespace-nowrap">${esc(c.created_at)}</td>\n<td class="px-4 py-2 whitespace-nowrap">${esc(c.finished_at)}</td>\n<td class="px-4 py-2">${durMs}</td>\n<td class="px-4 py-2 text-red-400 max-w-[200px] truncate" title="${esc(c.error_message)}">${esc(c.error_message)}</td>\n</tr>`;
+					}).join('');
+				} else {
+					body.innerHTML = '<tr><td colspan="5" class="px-4 py-3 text-slate-500">No history</td></tr>';
+				}
 			} catch (e) {
-				historyEl.textContent = `❌ Error loading history:\n${e.message}`;
-				historyEl.classList.add('text-red-300');
+				body.innerHTML = `<tr><td colspan="5" class="px-4 py-3 text-red-400">Erro: ${esc(e.message)}</td></tr>`;
 			}
 		}
 
 		async function loadLogs() {
-			const level = document.getElementById('logLevel').value;
-			const limit = document.getElementById('logLimit').value || 100;
-			const logsEl = document.getElementById('logs');
-			const logStatsEl = document.getElementById('logStats');
-
-			logsEl.textContent = 'Loading...';
-			logStatsEl.innerHTML = '';
-
+			const limit = document.getElementById('logsLimit').value || 100;
+			const body = document.getElementById('logsBody');
+			const meta = document.getElementById('logsMeta');
+			body.innerHTML = '<tr><td colspan="4" class="px-4 py-3 text-slate-500">Loading...</td></tr>';
 			try {
-				// Load log stats
-				const statsResponse = await fetch('/logs/stats', {
-					headers: { 'Accept': 'application/json', ...authHeaders() }
-				});
-
-				if (statsResponse.status === 401) {
-					window.location = '/adminLogin';
-					return;
-				}
-
-				if (statsResponse.ok) {
-					const statsData = await statsResponse.json();
-					const levels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
-					const colors = {
-						'DEBUG': 'text-gray-400',
-						'INFO': 'text-blue-400',
-						'WARN': 'text-yellow-400',
-						'ERROR': 'text-red-400',
-						'FATAL': 'text-red-600'
-					};
-
-					logStatsEl.innerHTML = levels.map(l => {
-						const count = statsData[l] || 0;
-						return `<div class="bg-slate-800/60 rounded-lg p-3 border border-slate-700/60">
-							<div class="${colors[l]} font-semibold">${l}</div>
-							<div class="text-slate-300 text-lg">${count}</div>
-						</div>`;
+				const r = await fetch(`/logs?limit=${encodeURIComponent(limit)}`, { headers: { 'Accept': 'application/json', ...authHeaders() } });
+				if (r.status === 401) { window.location = '/adminLogin'; return; }
+				if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+				const data = await r.json();
+				meta.textContent = `Showing ${data.count} logs (limit=${data.limit})`;
+				if (Array.isArray(data.logs) && data.logs.length) {
+					body.innerHTML = data.logs.map(l => {
+						const levelColor = l.level === 'error' ? 'text-red-400' : l.level === 'warn' ? 'text-amber-300' : 'text-green-300';
+						return `<tr class="hover:bg-slate-800/40">\n<td class=\"px-4 py-2 whitespace-nowrap\">${esc(l.ts)}</td>\n<td class=\"px-4 py-2 ${levelColor}\">${esc(l.level)}</td>\n<td class=\"px-4 py-2 max-w-[420px] truncate\" title=\"${esc(l.message)}\">${esc(l.message)}</td>\n<td class=\"px-4 py-2 max-w-[200px] truncate\" title=\"${esc(l.caller)}\">${esc(l.caller || '')}</td>\n</tr>`;
 					}).join('');
+				} else {
+					body.innerHTML = '<tr><td colspan="4" class="px-4 py-3 text-slate-500">No logs</td></tr>';
 				}
-
-				// Load logs
-				let url = `/logs?limit=${encodeURIComponent(limit)}`;
-				if (level) {
-					url += `&level=${encodeURIComponent(level)}`;
-				}
-
-				const logsResponse = await fetch(url, {
-					headers: { 'Accept': 'application/json', ...authHeaders() }
-				});
-
-				if (logsResponse.status === 401) {
-					window.location = '/adminLogin';
-					return;
-				}
-
-				if (!logsResponse.ok) {
-					throw new Error(`${logsResponse.status} ${logsResponse.statusText}`);
-				}
-
-				const logs = await logsResponse.json();
-
-				if (!logs || logs.length === 0) {
-					logsEl.textContent = 'No logs found';
-					return;
-				}
-
-				// Format logs with colors and structured display
-				const formattedLogs = logs.map(log => {
-					const timestamp = new Date(log.timestamp).toLocaleString();
-					const levelColors = {
-						'DEBUG': 'color: #9CA3AF;',
-						'INFO': 'color: #60A5FA;',
-						'WARN': 'color: #FBBF24;',
-						'ERROR': 'color: #F87171;',
-						'FATAL': 'color: #DC2626; font-weight: bold;'
-					};
-
-					let fieldsDisplay = '';
-					if (log.fields && log.fields !== '{}') {
-						try {
-							const fields = JSON.parse(log.fields);
-							fieldsDisplay = Object.keys(fields).length > 0 ?
-								`\n    Fields: ${JSON.stringify(fields, null, 6)}` : '';
-						} catch (e) {
-							fieldsDisplay = log.fields ? `\n    Fields: ${log.fields}` : '';
-						}
-					}
-
-					const callerDisplay = log.caller ? `\n    Caller: ${log.caller}` : '';
-
-					return `<div style="margin-bottom: 1rem; padding: 0.75rem; border-left: 3px solid ${levelColors[log.level]?.split(': ')[1]?.split(';')[0] || '#9CA3AF'}; background: rgba(15, 23, 42, 0.6);">
-<span style="color: #CBD5E1;">[${timestamp}]</span> <span style="${levelColors[log.level] || 'color: #9CA3AF;'}">${log.level}</span>: ${log.message}${fieldsDisplay}${callerDisplay}
-</div>`;
-				}).join('');
-
-				logsEl.innerHTML = formattedLogs;
-
 			} catch (e) {
-				logsEl.textContent = `❌ Error loading logs:\n${e.message}`;
-				logsEl.classList.add('text-red-300');
+				body.innerHTML = `<tr><td colspan=\"4\" class=\"px-4 py-3 text-red-400\">Erro: ${esc(e.message)}</td></tr>`;
+				meta.textContent = '';
 			}
 		}
 
-		// Auto-refresh functionality
 		let autoRefreshInterval;
-
 		function startAutoRefresh() {
-			autoRefreshInterval = setInterval(() => {
-				loadStats();
-				// Don't auto-refresh history as it might be more expensive
-			}, 5000);
+			stopAutoRefresh();
+			autoRefreshInterval = setInterval(() => { loadStats(); }, 5000);
 		}
+		function stopAutoRefresh() { if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; } }
 
-		function stopAutoRefresh() {
-			if (autoRefreshInterval) {
-				clearInterval(autoRefreshInterval);
-				autoRefreshInterval = null;
-			}
-		}
-
-		// Initialize
+		// Init
+		activate(btnStatus);
 		loadStats();
 		loadHistory();
-		loadLogs();
 		startAutoRefresh();
 
-		// Stop auto-refresh when page is not visible (performance optimization)
-		document.addEventListener('visibilitychange', () => {
-			if (document.hidden) {
-				stopAutoRefresh();
-			} else {
-				startAutoRefresh();
-			}
-		});
-
-		// Handle limit input changes
 		document.getElementById('limit').addEventListener('change', loadHistory);
+		document.getElementById('logsLimit').addEventListener('change', loadLogs);
+		document.addEventListener('visibilitychange', () => { if (document.hidden) stopAutoRefresh(); else if (!viewLogs.classList.contains('hidden')) { } else startAutoRefresh(); });
 	</script>
 </body>
 

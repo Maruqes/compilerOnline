@@ -157,6 +157,27 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
 	}{Containers: recs, Count: len(recs), Limit: limit})
 }
 
+func logsHandler(w http.ResponseWriter, r *http.Request) {
+	limit := 100
+	if ls := r.URL.Query().Get("limit"); ls != "" {
+		if v, err := strconv.Atoi(ls); err == nil {
+			limit = v
+		}
+	}
+	logs, err := listRecentLogs(limit)
+	if err != nil {
+		logger.Error("logs list", zap.Error(err))
+		http.Error(w, "error listing logs", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(struct {
+		Logs  []map[string]interface{} `json:"logs"`
+		Count int                      `json:"count"`
+		Limit int                      `json:"limit"`
+	}{Logs: logs, Count: len(logs), Limit: limit})
+}
+
 func getContainerStats() ([]ContainerStats, error) {
 	// Conectar ao containerd
 	client, err := containerd.New("/run/containerd/containerd.sock")
@@ -225,28 +246,30 @@ func getIndividualContainerStats(ctx context.Context, container containerd.Conta
 // (deprecated) parseMetrics removed; metrics now decoded directly from containerd task.Metrics
 
 func main() {
-	// initialize zap logger (production config; swap for zap.NewDevelopment() if needed)
-	l, err := zap.NewProduction()
-	if err != nil {
-		panic(fmt.Sprintf("cannot init logger: %v", err))
-	}
-	defer l.Sync() // flushes buffer, if any
-	logger = l
 
 	//ask for sudo if not root
 	if os.Geteuid() != 0 {
 		sudoPath, lookErr := exec.LookPath("sudo")
 		if lookErr != nil {
-			logger.Fatal("need root or sudo not found", zap.Error(lookErr))
+			panic("need root or sudo not found" + lookErr.Error())
 		}
 		args := append([]string{"-E", os.Args[0]}, os.Args[1:]...)
 		cmd := exec.Command(sudoPath, args...)
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 		if runErr := cmd.Run(); runErr != nil {
-			logger.Fatal("sudo elevation failed", zap.Error(runErr))
+			panic("sudo elevation failed" + runErr.Error())
 		}
 		return
 	}
+
+	// Inicializa logger custom que grava em SQLite (data/logs.sql)
+	logDBPath := "data/logs.sql" // extensão .sql como solicitado
+	l, err := InitAppLogger(logDBPath, os.Getenv("LOG_LEVEL"))
+	if err != nil {
+		panic(fmt.Sprintf("cannot init sqlite logger: %v", err))
+	}
+	defer l.Sync()
+	logger = l
 
 	const envFile = ".env"
 
@@ -303,6 +326,7 @@ func main() {
 	//protected endpoints
 	http.HandleFunc("/stats", requireAdmin(statsHandler))
 	http.HandleFunc("/history", requireAdmin(historyHandler))
+	http.HandleFunc("/logs", requireAdmin(logsHandler))
 	http.HandleFunc("/admin", requireAdmin(adminHandler))
 	http.HandleFunc("/adminLogin", adminHandlerLogin)
 
