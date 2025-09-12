@@ -183,14 +183,20 @@ func createLogsSchema(db *sql.DB) error {
 }
 
 // Optional: função utilitária para listar últimos N logs (pode ser usada em endpoints futuros)
-func listRecentLogs(limit int) ([]map[string]interface{}, error) {
+func listRecentLogs(limit int, levelFilter string) ([]map[string]interface{}, error) {
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
 	if logsDB == nil {
 		return nil, errors.New("logs db not initialized")
 	}
-	rows, err := logsDB.Query(`SELECT ts, level, message, logger_name, caller, stack FROM logs ORDER BY ts DESC LIMIT ?`, limit)
+	var rows *sql.Rows
+	var err error
+	if levelFilter != "" {
+		rows, err = logsDB.Query(`SELECT ts, level, message, logger_name, caller, stack FROM logs WHERE level = ? ORDER BY ts DESC LIMIT ?`, levelFilter, limit)
+	} else {
+		rows, err = logsDB.Query(`SELECT ts, level, message, logger_name, caller, stack FROM logs ORDER BY ts DESC LIMIT ?`, limit)
+	}
 	if err != nil {
 		return nil, err
 	}

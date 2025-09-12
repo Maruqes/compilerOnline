@@ -164,7 +164,21 @@ func logsHandler(w http.ResponseWriter, r *http.Request) {
 			limit = v
 		}
 	}
-	logs, err := listRecentLogs(limit)
+	level := r.URL.Query().Get("level")
+	if level != "" {
+		// normalize and validate expected values: info,warn,error,debug
+		lvl := level
+		switch lvl {
+		case "info", "warn", "warning", "error", "debug":
+			if lvl == "warning" { // map 'warning' -> 'warn'
+				lvl = "warn"
+			}
+			level = lvl
+		default:
+			level = "" // invalid -> ignore filter
+		}
+	}
+	logs, err := listRecentLogs(limit, level)
 	if err != nil {
 		logger.Error("logs list", zap.Error(err))
 		http.Error(w, "error listing logs", http.StatusInternalServerError)
@@ -175,7 +189,8 @@ func logsHandler(w http.ResponseWriter, r *http.Request) {
 		Logs  []map[string]interface{} `json:"logs"`
 		Count int                      `json:"count"`
 		Limit int                      `json:"limit"`
-	}{Logs: logs, Count: len(logs), Limit: limit})
+		Level string                   `json:"level,omitempty"`
+	}{Logs: logs, Count: len(logs), Limit: limit, Level: level})
 }
 
 func getContainerStats() ([]ContainerStats, error) {
