@@ -20,6 +20,8 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
+var ErrLimitChar5k = fmt.Errorf("code exceeds 5000 character limit")
+
 // sandboxSpecOpt returns a SpecOpt applying mounts, limits, and hardening.
 func sandboxSpecOpt() oci.SpecOpts {
 	return func(ctx context.Context, client oci.Client, c *containers.Container, s *specs.Spec) error {
@@ -54,8 +56,8 @@ func sandboxSpecOpt() oci.SpecOpts {
 }
 
 func buildExecutionScript(code string) (string, error) {
-	if len(code) > 3000 {
-		return "", fmt.Errorf("code too long; max 3000 characters")
+	if len(code) > 5000 {
+		return "", ErrLimitChar5k
 	}
 	delim := "LANGCODE_EOF"
 	if strings.Contains(code, delim) {

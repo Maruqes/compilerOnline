@@ -51,6 +51,7 @@ func migrate() error {
 		created_at TIMESTAMP NOT NULL,
 		finished_at TIMESTAMP NOT NULL,
 		execution_time_ms INTEGER NOT NULL,
+		ip TEXT,
 		code_executed TEXT,
 		output TEXT,
 		error_message TEXT
@@ -64,6 +65,10 @@ func migrate() error {
 	// Check existing columns; migrate if legacy columns (old metrics / status / runtime) still present.
 	if err := ensureMinimalSchema(); err != nil {
 		return fmt.Errorf("ensure minimal schema: %w", err)
+	}
+	// Ensure the ip column exists (added after initial minimal schema).
+	if err := ensureIPColumn(); err != nil {
+		return fmt.Errorf("ensure ip column: %w", err)
 	}
 	return nil
 }
@@ -89,6 +94,7 @@ func ensureMinimalSchema() error {
 	if len(cols) == 0 {
 		return nil
 	}
+	// ip column intentionally NOT part of strict minimal set so we can add it later with simple ALTER (avoid full copy if it's the only missing col)
 	required := []string{"id", "container_id", "created_at", "finished_at", "execution_time_ms", "code_executed", "output", "error_message"}
 	requiredSet := map[string]struct{}{}
 	for _, c := range required {
@@ -131,6 +137,7 @@ func ensureMinimalSchema() error {
 		created_at TIMESTAMP NOT NULL,
 		finished_at TIMESTAMP NOT NULL,
 		execution_time_ms INTEGER NOT NULL,
+		ip TEXT,
 		code_executed TEXT,
 		output TEXT,
 		error_message TEXT
@@ -140,7 +147,19 @@ func ensureMinimalSchema() error {
 	if _, err = tx.Exec(`CREATE INDEX IF NOT EXISTS idx_containers_created_at_new ON containers_new(created_at)`); err != nil {
 		return err
 	}
-	copyCols := []string{"container_id", "created_at", "finished_at", "execution_time_ms", "code_executed", "output", "error_message"}
+	// Determine if old table had ip column; copy it if present, else leave NULL.
+	existingHasIP := false
+	for _, c := range cols {
+		if c == "ip" {
+			existingHasIP = true
+			break
+		}
+	}
+	copyCols := []string{"container_id", "created_at", "finished_at", "execution_time_ms"}
+	if existingHasIP {
+		copyCols = append(copyCols, "ip")
+	}
+	copyCols = append(copyCols, "code_executed", "output", "error_message")
 	selCols := strings.Join(copyCols, ",")
 	if _, err = tx.Exec(`INSERT INTO containers_new (` + selCols + `) SELECT ` + selCols + ` FROM containers`); err != nil {
 		return err
@@ -158,6 +177,35 @@ func ensureMinimalSchema() error {
 		return err
 	}
 	_, _ = db.Exec(`VACUUM`)
+	return nil
+}
+
+// ensureIPColumn adds the ip column (nullable) if it does not yet exist.
+func ensureIPColumn() error {
+	rows, err := db.Query(`PRAGMA table_info(containers)`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	hasIP := false
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notnull, pk int
+		var dflt interface{}
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			return err
+		}
+		if name == "ip" {
+			hasIP = true
+		}
+	}
+	if hasIP {
+		return nil
+	}
+	if _, err := db.Exec(`ALTER TABLE containers ADD COLUMN ip TEXT`); err != nil {
+		return fmt.Errorf("add ip column: %w", err)
+	}
 	return nil
 }
 
@@ -180,13 +228,14 @@ func saveContainerRecordDB(r *ContainerRecord) error {
 	if db == nil {
 		return errors.New("db not initialized")
 	}
-	stmt := `INSERT INTO containers (container_id, created_at, finished_at, execution_time_ms, code_executed, output, error_message)
-			 VALUES (?,?,?,?,?,?,?)`
+	stmt := `INSERT INTO containers (container_id, created_at, finished_at, execution_time_ms, ip, code_executed, output, error_message)
+			 VALUES (?,?,?,?,?,?,?,?)`
 	_, err := db.Exec(stmt,
 		r.ContainerID,
 		r.CreatedAt.UTC(),
 		r.FinishedAt.UTC(),
 		r.ExecutionTime.Milliseconds(),
+		r.IP,
 		r.CodeExecuted,
 		r.Output,
 		r.ErrorMessage,
@@ -201,7 +250,7 @@ func listContainerRecords(limit int) ([]ContainerRecord, error) {
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	rows, err := db.Query(`SELECT container_id, created_at, finished_at, execution_time_ms, code_executed, output, error_message
+	rows, err := db.Query(`SELECT container_id, created_at, finished_at, execution_time_ms, COALESCE(ip,'') as ip, code_executed, output, error_message
 		FROM containers ORDER BY created_at DESC LIMIT ?`, limit)
 	if err != nil {
 		return nil, err
@@ -211,7 +260,7 @@ func listContainerRecords(limit int) ([]ContainerRecord, error) {
 	for rows.Next() {
 		var r ContainerRecord
 		var execMs int64
-		if err := rows.Scan(&r.ContainerID, &r.CreatedAt, &r.FinishedAt, &execMs, &r.CodeExecuted, &r.Output, &r.ErrorMessage); err != nil {
+		if err := rows.Scan(&r.ContainerID, &r.CreatedAt, &r.FinishedAt, &execMs, &r.IP, &r.CodeExecuted, &r.Output, &r.ErrorMessage); err != nil {
 			return nil, err
 		}
 		r.ExecutionTime = time.Duration(execMs) * time.Millisecond

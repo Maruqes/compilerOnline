@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/containerd/containerd"
@@ -36,6 +38,7 @@ type ContainerRecord struct {
 	CreatedAt     time.Time     `json:"created_at"`
 	FinishedAt    time.Time     `json:"finished_at"`
 	ExecutionTime time.Duration `json:"execution_time"`
+	IP            string        `json:"ip,omitempty"`
 	CodeExecuted  string        `json:"code_executed"`
 	Output        string        `json:"output"`
 	ErrorMessage  string        `json:"error_message"`
@@ -57,23 +60,31 @@ func compileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	clientIP := extractClientIP(r)
+
 	// Executar e capturar dados para histórico
 	result, containerRecord, err := execInKataWithHistory(code)
 	if err != nil {
 		logger.Error("code execution failed", zap.Error(err))
 		// Persist even on error
 		if containerRecord != nil {
+			containerRecord.IP = clientIP
 			containerRecord.ErrorMessage = err.Error()
 			if dbErr := saveContainerRecordDB(containerRecord); dbErr != nil {
 				logger.Error("failed to persist error record", zap.Error(dbErr))
 			}
 		}
-		http.Error(w, "Error during code execution (probably 5 sec timeout)\n"+result, http.StatusInternalServerError)
+		if err == ErrLimitChar5k {
+			http.Error(w, "Error: code exceeds 5000 character limit\n"+result, http.StatusBadRequest)
+		} else {
+			http.Error(w, "Error during code execution (probably 5 sec timeout or 5k char limit)\n"+result, http.StatusInternalServerError)
+		}
 		return
 	}
 
 	// Persist success
 	if containerRecord != nil {
+		containerRecord.IP = clientIP
 		if dbErr := saveContainerRecordDB(containerRecord); dbErr != nil {
 			logger.Error("failed to persist record", zap.Error(dbErr))
 		}
@@ -81,6 +92,30 @@ func compileHandler(w http.ResponseWriter, r *http.Request) {
 
 	logger.Info("code executed successfully")
 	w.Write([]byte(result))
+}
+
+// extractClientIP returns the best-effort client IP considering common proxy headers.
+func extractClientIP(r *http.Request) string {
+	// Check X-Forwarded-For (may contain multiple comma-separated IPs: client, proxy1, proxy2)
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		parts := strings.Split(xff, ",")
+		if len(parts) > 0 {
+			ip := strings.TrimSpace(parts[0])
+			if ip != "" {
+				return ip
+			}
+		}
+	}
+	// Check X-Real-IP
+	if rip := r.Header.Get("X-Real-IP"); rip != "" {
+		return rip
+	}
+	// Fallback RemoteAddr
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err == nil {
+		return host
+	}
+	return r.RemoteAddr
 }
 
 // execInKataWithHistory executa código e retorna dados completos para o histórico
@@ -336,7 +371,22 @@ func main() {
 		}
 		http.NotFound(w, r)
 	})
-	http.HandleFunc("/compile", compileHandler)
+	// Rate limiter configuration
+	ratePerMin := 30
+	if v := os.Getenv("RATE_LIMIT_PER_MIN"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			ratePerMin = n
+		}
+	}
+	burst := ratePerMin
+	if v := os.Getenv("RATE_LIMIT_BURST"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			burst = n
+		}
+	}
+	ipLimiter := newIPLimiter(ratePerMin, burst)
+	go ipLimiter.cleanupLoop()
+	http.Handle("/compile", rateLimitMiddleware(http.HandlerFunc(compileHandler), ipLimiter))
 
 	//protected endpoints
 	http.HandleFunc("/stats", requireAdmin(statsHandler))

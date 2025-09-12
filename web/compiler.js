@@ -1,7 +1,7 @@
 document.getElementById('current-year').textContent = new Date().getFullYear();
 
 // Default sample code (fallback)
-const defaultCode = `include("liblang/strings.lang")\n\nfunc main() {\n    print("Hello, World!\\n");\n    return;\n}\n`;
+const defaultCode = `include("liblang/strings.lang")\n\nfunc main() {\n    print("Hello, World!\\\\n");\n    return;\n}\n`;
 
 let activeExampleKey = null; // track which example loaded
 
@@ -13,6 +13,497 @@ const compilerPageExamples = [
 func main(){
 	dq a = 0x1234abcd;
 	printHex(a);
+	return;
+}` },
+	{
+		key: 'demo1', title: 'Demo 1', code: `include("liblang/min.lang")
+include("liblang/mem.lang")
+include("liblang/strings.lang")
+include("liblang/threads.lang")
+include("liblang/net.lang")
+
+// A simple struct with an inline fixed-size array (2 dq elements)
+struct Pair {
+	dq a;
+	dq data dq<2>;
+	dq b;
+}
+
+// Sum an array of dq values
+func sum(ptr arr<dq>, dq n){
+	dq total = 0;
+	for dq i = 0; i < n; i++; {
+		total = total + arr[i];
+	}
+	return total;
+}
+
+
+// Demonstrate pointer indirection
+func increment(ptr p<dq>){
+	*<dq>p = *<dq>p + 1;
+	return;
+}
+
+func main(){
+	print("=== Simple Feature Demo ===\\n");
+
+	// 1. Variables and arithmetic
+	dq x = 10;
+	dq y = 32;
+	dq z = x * y + 5; // 10*32+5 = 325
+       
+	print("z = ");
+	dq bufNum = db<32>; // buffer for number -> string
+	int_to_string(z, bufNum, 32);
+	print(bufNum); print("\\n");
+
+	// 2. Array + loop + function call (sum)
+	dq numbers<dq> = dq{1,2,3,4,5};
+	dq total = sum(numbers, 5);
+	print("sum(numbers) = ");
+	int_to_string(total, bufNum, 32);
+	print(bufNum); print("\\n");
+
+	// 3. Struct usage + inline array field writes
+	ptr p<Pair> = Pair{};
+	p.a = 11; p.b = 99;
+
+    
+	// write inline 2-element dq array two different ways
+	*<dq>(&p.data) = 22;                         // element 0
+	*<dq>(&p.data + sizeof(dq)) = 33;            // element 1
+	print("Pair: a data[0] data[1] b -> \\n");
+	dq tmpBuf = db<32>;
+	int_to_string(p.a, tmpBuf, 32); 
+	print(tmpBuf); 
+	print(" ");
+
+	int_to_string(*<dq>(&p.data), tmpBuf, 32); 
+	print(tmpBuf); 
+	print(" ");
+
+	int_to_string(*<dq>(&p.data + sizeof(dq)), tmpBuf, 32); 
+	print(tmpBuf); 
+	print(" ");
+    
+	int_to_string(p.b, tmpBuf, 32); 
+	print(tmpBuf); 
+	print("\\n");
+
+	// 4. Pointer indirection
+	dq counter = 0;
+	increment(&counter);
+	increment(&counter);
+	print("counter after increments = "); int_to_string(counter, bufNum, 32); print(bufNum); print("\\n");
+
+
+	print("=== End Demo ===\\n");
+	return;
+}` },
+	{
+		key: 'demo2', title: 'Demo 2', code: `
+include("liblang/strings.lang")
+
+// --- Global scope -------------------------------------------------------
+global{
+	dq gCounter = 0;        // mutable global counter
+	dq gLimit   = 10;       // loop upper bound
+	dq gSum     = 0;        // accumulate values
+	dq gFlag    = 1;        // used in conditionals
+}
+
+// Increment the global counter and add to sum
+func tick(){
+	gCounter++;
+	gSum = gSum + gCounter;
+	return;
+}
+
+// Show simple branching with globals
+func checkState(){
+	if gFlag == 0 {
+		print("gFlag == 0\\n");
+	}elif gFlag == 1 {
+		print("gFlag == 1\\n");
+	}else {
+		print("gFlag other\\n");
+	}
+	return;
+}
+
+// Format and print a dq number with label
+func printNum(ptr label, dq value){
+	dq buf = db<32>;
+	print(label);
+	int_to_string(value, buf, 32);
+	print(buf);
+	print("\\n");
+	return;
+}
+
+func main(){
+	print("=== Globals & Loops Demo ===\\n");
+
+	// 1. while loop using global limit
+	while gCounter < gLimit {
+		tick();         
+		if gCounter % 2 { 
+           
+			continue;
+		}
+		printNum("even step: ", gCounter);
+		if gCounter >= 6 {
+			break;
+		}
+	}
+
+	printNum("gCounter after while: ", gCounter);
+	printNum("gSum after while: ", gSum);
+
+	// 2. for loop to add remaining numbers up to gLimit
+	for dq i = gCounter; i < gLimit; i++; {
+		gSum = gSum + i;
+	}
+	printNum("gSum after for: ", gSum);
+
+	// 3. Conditional state display
+	checkState();
+	gFlag = 0;
+	checkState();
+	gFlag = 7;
+	checkState();
+
+	// 4. Simple countdown with while
+	dq n = 5;
+	print("countdown: \\n");
+	while n > 0 {
+		printNum("n = ", n);
+		n--;
+	}
+
+	print("Done.\\n");
+	return;
+}` },
+	{
+		key: 'demo3', title: 'Demo 3', code: `include("liblang/min.lang")
+include("liblang/mem.lang")
+include("liblang/strings.lang")
+
+// --- Section 1: Arrays --------------------------------------------------
+func arrayBasics(){
+	dq nums<dq> = dq{10,20,30,40};
+	dq total = 0;
+	for dq i = 0; i < 4; i++; { 
+		total = total + nums[i];
+	}
+	dq buf = db<32>;
+	int_to_string(total, buf, 32);
+	print("array sum = ");
+	print(buf);
+	print("\\n");
+
+	// Modify via pointer view
+	ptr p<dq> = nums; // base pointer
+	p[2] = 333; // change third element
+	int_to_string(p[2], buf, 32);
+	print("nums[2] now = ");
+	print(buf);
+	print("\\n");
+	return;
+}
+
+// --- Section 2: Multi-level pointers ------------------------------------
+func pointerLevels(){
+	dq value = 5;
+	ptr p1<dq> = &value;
+	ptr p2<dq> = &p1;
+	ptr p3<dq> = &p2;
+
+	*<dq>p1 = *<dq>p1 + 10;      // value = 15
+	*<dq>*<dq>p2 = *<dq>*<dq>p2 + 5; // value = 20
+	*<dq>*<dq>*<dq>p3 = 42;         // value = 42
+
+	dq buf = db<32>;
+	int_to_string(value, buf, 32);
+	print("value(final) = ");
+	print(buf);
+	print("\\n");
+	return;
+}
+
+// --- Section 3: Pointer arithmetic & raw deref --------------------------
+func pointerArithmetic(){
+	dq arr<dq> = dq{1,2,3,4};
+	ptr base<dq> = arr;
+
+	// Show raw deref using *<dq>(address + offset)
+	dq first = *<dq>base;                      // arr[0]
+	dq second = *<dq>(base + sizeof(dq));      // arr[1]
+	dq third = base[2];                        // arr[2]
+
+	dq buf = db<32>;
+	int_to_string(first + second + third, buf, 32);
+	print("first+second+third = ");
+	print(buf);
+	print("\\n");
+
+	// Overwrite arr[1] via raw deref and show via indexing
+	*<dq>(base + sizeof(dq)) = 999;
+	int_to_string(arr[1], buf, 32);
+	print("arr[1] now = ");
+	print(buf);
+	print("\\n");
+	return;
+}
+
+// --- Section 4: Embedded assembly (syscall write) -----------------------
+// Demonstrates manual syscall invocation: write(1, msg, len)
+// Using: rax=1 (SYS_write) rdi=1 (fd=stdout) rsi=buf rdx=len then syscall
+func asmWriteDemo(){
+	ptr msg = "[asm] hello via raw syscall\\n";
+	dq len = getStringLen(msg);
+
+	// Equivalent to print(), but done manually.
+	asm(mov64_r_i, rax, 1);      // SYS_write
+	asm(mov64_r_i, rdi, 1);      // fd = stdout
+	loadReg(rsi, msg);           // buf
+	loadReg(rdx, len);           // len
+	asm(syscall);
+	return;
+}
+
+// --- Section 5: Inline buffer + ascii pattern via pointer walk ----------
+func fillPattern(){
+	dq N = 16;
+	dq buf = db<32>; // bigger than N for terminator
+	memset(buf, 32, 0);
+	ptr b<db> = buf;
+
+	for dq i = 0; i < N; i++; {
+		b[i] = 'A' + i;
+	}
+	b[N] = '\\n';
+	b[N+1] = 0;
+	print("pattern: ");
+	print(b);
+	return;
+}
+
+func main(){
+	print("=== Demo 3: pointers, arrays, asm ===\\n");
+	arrayBasics();
+	pointerLevels();
+	pointerArithmetic();
+	asmWriteDemo();
+	fillPattern();
+	print("=== End Demo 3 ===\\n");
+	return;
+}` },
+	{
+		key: 'demo4', title: 'Demo 4', code: `include("liblang/min.lang")
+include("liblang/mem.lang")
+include("liblang/strings.lang")
+include("liblang/threads.lang")
+include("liblang/net.lang")
+
+// ---------------- Globals ----------------
+global{
+	dq gTicks = 0;
+	dq gTotal = 0;
+	dq gThreadDone = 0;
+}
+
+// ---------------- Structs ----------------
+struct Inner { dq a; dq b; }
+struct Complex {
+	dq id;
+	dq values dq<4>;   // inline array
+	dq count;
+	dq inners Inner<2>; // array of 2 Inner structs
+}
+
+// Init Complex instance
+func initComplex(ptr cPtr, dq ident){
+	ptr c<Complex> = cPtr;
+	c.id = ident;
+	c.count = 4;
+	// write inline array via raw deref
+	*<dq>(&c.values) = 10;
+	*<dq>(&c.values + sizeof(dq)) = 20;
+	*<dq>(&c.values + (2 * sizeof(dq))) = 30;
+	*<dq>(&c.values + (3 * sizeof(dq))) = 40;
+	// inners
+	ptr i0<Inner> = &c.inners;
+	ptr i1<Inner> = &c.inners + sizeof(Inner);
+	i0.a = 1; i0.b = 2;
+	i1.a = 3; i1.b = 4;
+	return;
+}
+
+// Sum of all numeric fields for demonstration
+func complexSum(ptr cPtr){
+	ptr c<Complex> = cPtr;
+	dq s = c.id + c.count;
+	ptr vals<dq> = &c.values;
+	for dq i = 0; i < 4; i++; { s = s + vals[i]; }
+	ptr i0<Inner> = &c.inners;
+	ptr i1<Inner> = &c.inners + sizeof(Inner);
+	s = s + i0.a + i0.b + i1.a + i1.b;
+	return s;
+}
+
+// ---------------- Inline asm example (getpid) ----------------
+// Demonstrates invoking getpid (syscall 39) manually and returning pid.
+func getPidAsm(){
+	dq pid; 
+	asm(mov64_r_i, rax, 39); // SYS_getpid
+	asm(syscall);
+	loadVar(pid, rax); // syscall result in rax
+	return pid;
+}
+
+// ---------------- Threads ----------------
+func workerAdd(dq base){
+	// simple workload
+	for dq i = 0; i < 5; i++; {
+		gTotal = gTotal + base + i;
+		gTicks++;
+		nanosleep(0, 2000000); // 2ms
+	}
+	gThreadDone = 1;
+	return;
+}
+
+// ---------------- Heap / brk demo ----------------
+func heapDemo(){
+	dq N = 64;
+	ptr mem = brk(N);
+	if mem == -1 { print("brk failed\\n"); return; }
+	memset(mem, N, 0);
+	// Lay out mixed types at offsets
+	*<db>(mem + 0) = 'Z';
+	*<dw>(mem + 2) = 0xBEEF;
+	*<dd>(mem + 8) = 0x11223344;
+	*<dq>(mem + 16) = 0xAABBCCDDEEFF0011;
+	print("*<db>(mem + 0) -> ");printHex(*<db>(mem+0));
+	print("*<dw>(mem + 2) -> ");printHex(*<dw>(mem+2));
+	print("*<dd>(mem + 8) -> ");printHex(*<dd>(mem+8));
+	print("*<dq>(mem + 16) -> ");printHex(*<dq>(mem+16));
+	freeBrk(mem);
+	return;
+}
+
+// ---------------- Network (optional) ----------------
+func tryConnect(){
+	dq sock = sys_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if sock < 0 { print("socket fail (ok)\\n"); return; }
+	dq addr<sockaddr_in> = sockaddr_in{};
+	addr.family = AF_INET; addr.port = htons(65000); addr.addr = htonl(0x7F000001); // 127.0.0.1
+	dq r = sys_connect(sock, addr, 16);
+	if r < 0 { print("connect fail (ok)\\n"); sys_close(sock); return; }
+	print("connected (unexpected)\\n");
+	sys_close(sock);
+	return;
+}
+
+// ---------------- Raw syscall write demo ----------------
+func rawWrite(ptr msg){
+	dq len = getStringLen(msg);
+	asm(mov64_r_i, rax, 1);
+	asm(mov64_r_i, rdi, 1);
+	loadReg(rsi, msg);
+	loadReg(rdx, len);
+	asm(syscall);
+	return;
+}
+
+// ---------------- Arg echo ----------------
+func echoArgs(dq argc, dq rbpSave){
+	ptr args<dq> = getArgsPtr(rbpSave);
+	for dq i = 0; i < argc; i++; {
+		print("arg[");
+		dq numBuf = db<16>; int_to_string(i, numBuf, 16); print(numBuf); print("] = ");
+		print(args[i]);
+		print("\\n");
+	}
+	return;
+}
+
+func main(dq argc){
+	print("=== Advanced Showcase ===\\n");
+
+	// Save rbp for args
+	dq rbpVal;
+	loadVar(rbpVal, rbp);
+	echoArgs(argc, rbpVal);
+
+	// Struct + nested usage
+	ptr c<Complex> = Complex{};
+	initComplex(c, 99);
+	dq sum = complexSum(c);
+	dq buf = db<32>;
+	int_to_string(sum, buf, 32);
+	print("complexSum = ");
+	print(buf);
+	print("\\n");
+
+	// getpid via inline asm
+	dq pid = getPidAsm();
+	int_to_string(pid, buf, 32);
+	print("pid = ");
+	print(buf);
+	print("\\n");
+
+	heapDemo();
+
+	// Thread demo (create one worker)
+	dq stack_size = 6 * 4096; //each mmap page is 4096 bytes
+	dq stack1 = mmap(6);
+	dq t1_id = 0;
+	if stack1 != -1 {
+		// base param 100
+		addThreadVariable(stack1, stack_size, 100, 0);
+		createThreadIds(&workerAdd, stack1, stack_size, &t1_id, 0, 1);
+		//thread with workerAdd(100)
+	} else {
+		print("mmap stack fail (skip thread)\\n");
+	}
+
+	// Poll until thread done (rudimentary join substitute)
+	dq spins = 0;
+	while gThreadDone == 0{
+		spins++;
+	}
+	print("thread finished with spins = ");
+	printHex(spins);
+
+	int_to_string(gTotal, buf, 32);
+	print("gTotal = ");
+	print(buf);
+	print("\\n");
+
+	// Network attempt (non-fatal)
+	tryConnect();
+
+	// Raw write + string ops
+	ptr demo = "Reversible line!\\n";
+	rawWrite(demo);
+	reverseString(demo);
+	print("reversed: ");
+	print(demo);
+	print("\\n");
+
+	// Pointer arithmetic quick sample
+	dq small<dq> = dq{5,6,7};
+	ptr ps<dq> = small;
+	*<dq>(ps + sizeof(dq)) = 66;
+	int_to_string(small[1], buf, 32);
+	print("small[1] = ");
+	print(buf);
+	print("\\n");
+
+	print("=== End Showcase ===\\n");
 	return;
 }` },
 	{

@@ -86,8 +86,8 @@ const codeExamples = {
 }
 `,
 		description: [
-			"Scalar declarations across dq/dd/dw/db/ptr and basic arithmetic.",
-			"Unary negation with explicit type affirmation for each width."
+			"Shows simple types (dq, dd, dw, db, ptr) and basic math.",
+			"Also shows negation and forcing a value to a type."
 		],
 		features: {
 			title: "Type Sizes:",
@@ -128,7 +128,7 @@ const codeExamples = {
 	printHex(x >> sh);
 `,
 		description: [
-			"Arithmetic, bitwise, logical, comparisons, and shifts in one routine."
+			"Examples of math, bitwise, logic, compares and shifts."
 		],
 		features: {
 			title: "Ops:",
@@ -179,8 +179,8 @@ func structsT(){
 	return;
 }`,
 		description: [
-			"Struct definitions with mixed field sizes and nested/generic style references.",
-			"Direct field access and instance initialization syntax."
+			"Defines a struct with fields and a small array.",
+			"Shows different ways to read and write the array values."
 		],
 		features: {
 			title: "Type Sizes:",
@@ -228,8 +228,8 @@ func structsT(){
 	return;
 }`,
 		description: [
-			"Multi-level pointer declarations and dereferencing.",
-			"Explicit typed pointer syntax with generic-like annotations."
+			"Sets pointers to values and changes them.",
+			"Shows single and double pointers with explicit types."
 		],
 		features: {
 			title: "Memory Operations:",
@@ -259,9 +259,9 @@ func nanosleep(dq sec, dq nansec){
 	return;
 }`,
 		description: [
-			"Inline assembly with syscall number load and register setup.",
-			"Direct system interaction via raw syscall invocation.",
-			"Not all instructions are supported, check asmFunc.go for details."
+			"Calls nanosleep with inline asm.",
+			"Loads registers and does a syscall.",
+			"Only a limited set of asm ops is supported."
 		],
 		features: {
 			title: "Assembly Features:",
@@ -316,8 +316,8 @@ func nanosleep(dq sec, dq nansec){
 	return;
 }`,
 		description: [
-			"Loops, conditionals, and branching constructs in one routine.",
-			"Demonstrates while, for, if/elif/else, break, continue."
+			"Basic if/elif/else, while and for loops.",
+			"Shows break and continue."
 		],
 		features: {
 			title: "Control Structures:",
@@ -342,8 +342,8 @@ func globalVars(){
 	return;
 }`,
 		description: [
-			"Global storage block with initialized data.",
-			"Access globals directly inside functions."
+			"Defines globals.",
+			"Reads them inside a function."
 		],
 		features: {
 			title: "Global Features:",
@@ -374,8 +374,8 @@ func globalVars(){
 	return;
 }`,
 		description: [
-			"Linear and nested array initialization.",
-			"Indexed element access within nested loops."
+			"Creates a 1D array and a 2x2 array.",
+			"Loops over elements and prints them."
 		],
 		features: {
 			title: "Array Features:",

@@ -51,7 +51,7 @@ func memcpy(ptr dest, ptr src, dq len){
 }
 
 //needs to be called from main (defer is another func so can not use it)
-func getArgsPtr(dq argc, dq rbpVar) {
+func getArgsPtr(dq rbpVar) {
 	ptr args<dq> = rbpVar + 24;
 	return args;
 }
