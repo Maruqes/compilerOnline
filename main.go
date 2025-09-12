@@ -2,45 +2,56 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 )
+
+var logger *zap.Logger
 
 func compileHandler(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	if code == "" {
+		logger.Warn("code not provided")
 		http.Error(w, "code not provided", http.StatusBadRequest)
 		return
 	}
 
 	result, err := execInKata(code)
 	if err != nil {
-		fmt.Println("Error during code execution", err)
+		logger.Error("code execution failed", zap.Error(err))
 		http.Error(w, "Error during code execution (probably 5 sec timeout)\n"+result, http.StatusInternalServerError)
 		return
 	}
 
+	logger.Info("code executed successfully")
 	w.Write([]byte(result))
 }
 
 func main() {
+	// initialize zap logger (production config; swap for zap.NewDevelopment() if needed)
+	l, err := zap.NewProduction()
+	if err != nil {
+		panic(fmt.Sprintf("cannot init logger: %v", err))
+	}
+	defer l.Sync() // flushes buffer, if any
+	logger = l
 
 	//ask for sudo if not root
 	if os.Geteuid() != 0 {
 		sudoPath, lookErr := exec.LookPath("sudo")
 		if lookErr != nil {
-			log.Fatalf("need root or sudo not found: %v", lookErr)
+			logger.Fatal("need root or sudo not found", zap.Error(lookErr))
 		}
 		args := append([]string{"-E", os.Args[0]}, os.Args[1:]...)
 		cmd := exec.Command(sudoPath, args...)
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 		if runErr := cmd.Run(); runErr != nil {
-			log.Fatalf("sudo elevation failed: %v", runErr)
+			logger.Fatal("sudo elevation failed", zap.Error(runErr))
 		}
 		return
 	}
@@ -48,16 +59,16 @@ func main() {
 	const envFile = ".env"
 
 	if _, err := os.Stat(envFile); os.IsNotExist(err) {
-		log.Fatalf("Environment file %s does not exist", envFile)
+		logger.Fatal("environment file does not exist", zap.String("file", envFile))
 	}
 
 	if err := godotenv.Load(envFile); err != nil {
-		log.Fatalf("Error loading %s: %v", envFile, err)
+		logger.Fatal("error loading env file", zap.String("file", envFile), zap.Error(err))
 	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		log.Fatalf("Environment variable PORT not set in %s", envFile)
+		logger.Fatal("missing PORT env variable", zap.String("file", envFile))
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +89,8 @@ func main() {
 	http.HandleFunc("/compile", compileHandler)
 
 	addr := ":" + port
-	log.Printf("Server starting on %s...", addr)
-	log.Fatal(http.ListenAndServe(addr, nil))
+	logger.Info("server starting", zap.String("addr", addr))
+	if err := http.ListenAndServe(addr, nil); err != nil {
+		logger.Fatal("server exited", zap.Error(err))
+	}
 }

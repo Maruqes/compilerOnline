@@ -4,9 +4,9 @@ go 1.23.7
 
 require (
 	github.com/containerd/containerd v1.7.28
-	github.com/containerd/containerd/api v1.9.0
 	github.com/joho/godotenv v1.5.1
 	github.com/opencontainers/runtime-spec v1.2.1
+	go.uber.org/zap v1.27.0
 )
 
 require (
@@ -15,6 +15,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Microsoft/hcsshim v0.11.7 // indirect
 	github.com/containerd/cgroups v1.1.0 // indirect
+	github.com/containerd/containerd/api v1.9.0 // indirect
 	github.com/containerd/continuity v0.4.4 // indirect
 	github.com/containerd/errdefs v0.3.0 // indirect
 	github.com/containerd/fifo v1.1.0 // indirect
@@ -49,6 +50,7 @@ require (
 	go.opentelemetry.io/otel v1.21.0 // indirect
 	go.opentelemetry.io/otel/metric v1.21.0 // indirect
 	go.opentelemetry.io/otel/trace v1.21.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect

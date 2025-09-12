@@ -4,8 +4,8 @@
 (function () {
 	function headerTemplate(active) {
 		const linkBase = [
-			{ href: 'index.html', label: 'Home', key: 'home' },
-			{ href: 'compiler.html', label: 'Try Online', key: 'compiler' },
+			{ href: '/', label: 'Home', key: 'home' },
+			{ href: '/compiler', label: 'Try Online', key: 'compiler' },
 			{ href: 'https://github.com/Maruqes/compiler', label: 'GitHub', key: 'github', external: true },
 			{ href: 'https://github.com/Maruqes/compiler/releases', label: 'Download', key: 'download', external: true, primary: true }
 		];
