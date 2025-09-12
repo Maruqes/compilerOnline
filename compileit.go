@@ -80,30 +80,32 @@ rm -rf "$TMPDIR"`, delim, code, delim)
 	return script, nil
 }
 
-func execInKata(code string) (string, error) {
+// execInKata executes code inside a short-lived Kata container returning combined output,
+// the container ID (unique sandbox ID), and an error if execution failed or timed out.
+func execInKata(code string) (string, string, error) {
 	script, err := buildExecutionScript(code)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	//ask for sudo if not root
 	if os.Geteuid() != 0 {
 		sudoPath, lookErr := exec.LookPath("sudo")
 		if lookErr != nil {
-			return "", fmt.Errorf("need root or sudo not found: %w", lookErr)
+			return "", "", fmt.Errorf("need root or sudo not found: %w", lookErr)
 		}
 		args := append([]string{"-E", os.Args[0]}, os.Args[1:]...)
 		cmd := exec.Command(sudoPath, args...)
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 		if runErr := cmd.Run(); runErr != nil {
-			return "", fmt.Errorf("sudo elevation failed: %w", runErr)
+			return "", "", fmt.Errorf("sudo elevation failed: %w", runErr)
 		}
-		return "", nil
+		return "", "", nil
 	}
 
 	//connect to containerd
 	client, err := containerd.New("/run/containerd/containerd.sock")
 	if err != nil {
-		return "", fmt.Errorf("containerd client: %w", err)
+		return "", "", fmt.Errorf("containerd client: %w", err)
 	}
 	defer client.Close()
 
@@ -112,17 +114,17 @@ func execInKata(code string) (string, error) {
 	// Pull (or ensure present)
 	image, pullErr := client.Pull(ctx, "docker.io/library/ubuntu:24.04", containerd.WithPullUnpack)
 	if pullErr != nil {
-		return "", fmt.Errorf("pull image: %w", pullErr)
+		return "", "", fmt.Errorf("pull image: %w", pullErr)
 	}
 
 	//working directory and lang dir
 	wd, err := os.Getwd()
 	if err != nil {
-		return "", fmt.Errorf("getwd: %w", err)
+		return "", "", fmt.Errorf("getwd: %w", err)
 	}
 	langDir := filepath.Join(wd, "lang")
 	if fi, statErr := os.Stat(langDir); statErr != nil || !fi.IsDir() {
-		return "", fmt.Errorf("missing lang directory at %s", langDir)
+		return "", "", fmt.Errorf("missing lang directory at %s", langDir)
 	}
 
 	uniqueID := fmt.Sprintf("kata-sandbox-%d", time.Now().UnixNano())
@@ -159,7 +161,7 @@ func execInKata(code string) (string, error) {
 		containerd.WithRuntime("io.containerd.kata.v2", nil),
 	)
 	if err != nil {
-		return "", fmt.Errorf("create container: %w", err)
+		return "", uniqueID, fmt.Errorf("create container: %w", err)
 	}
 	defer func() { _ = container.Delete(ctx, containerd.WithSnapshotCleanup) }()
 
@@ -168,16 +170,16 @@ func execInKata(code string) (string, error) {
 	stderrBuf := &bytes.Buffer{}
 	task, err := container.NewTask(ctx, cio.NewCreator(cio.WithStreams(nil, stdoutBuf, stderrBuf)))
 	if err != nil {
-		return "", fmt.Errorf("new task: %w", err)
+		return "", uniqueID, fmt.Errorf("new task: %w", err)
 	}
 	defer func() { _, _ = task.Delete(ctx) }()
 
 	statusC, err := task.Wait(ctx)
 	if err != nil {
-		return "", fmt.Errorf("wait task: %w", err)
+		return "", uniqueID, fmt.Errorf("wait task: %w", err)
 	}
 	if err := task.Start(ctx); err != nil {
-		return "", fmt.Errorf("start task: %w", err)
+		return "", uniqueID, fmt.Errorf("start task: %w", err)
 	}
 
 	// wall clock timeout enforcement
@@ -200,17 +202,17 @@ func execInKata(code string) (string, error) {
 	}
 	select {
 	case <-statusC:
-		return collect(), nil
+		return collect(), uniqueID, nil
 	case <-time.After(timeout):
 		// try graceful then force
 		_ = task.Kill(ctx, syscall.SIGTERM, containerd.WithKillAll)
 		select {
 		case <-statusC:
-			return collect(), fmt.Errorf("execution exceeded %s (terminated with SIGTERM)", timeout)
+			return collect(), uniqueID, fmt.Errorf("execution exceeded %s (terminated with SIGTERM)", timeout)
 		case <-time.After(2 * time.Second):
 			_ = task.Kill(ctx, syscall.SIGKILL, containerd.WithKillAll)
 			<-statusC
-			return collect(), fmt.Errorf("execution exceeded %s (forced SIGKILL)", timeout)
+			return collect(), uniqueID, fmt.Errorf("execution exceeded %s (forced SIGKILL)", timeout)
 		}
 	}
 }

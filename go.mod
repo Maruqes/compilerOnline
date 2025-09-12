@@ -4,7 +4,9 @@ go 1.23.7
 
 require (
 	github.com/containerd/containerd v1.7.28
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/joho/godotenv v1.5.1
+	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/opencontainers/runtime-spec v1.2.1
 	go.uber.org/zap v1.27.0
 )

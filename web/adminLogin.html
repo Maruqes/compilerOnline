@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full scroll-smooth">
+
+<head>
+	<meta charset="UTF-8" />
+	<title>Admin Login - 512lang</title>
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link
+		href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap"
+		rel="stylesheet">
+	<script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+	<link rel="stylesheet" href="/site.css" />
+</head>
+
+<body class="min-h-full bg-slate-950 text-slate-100 antialiased selection:bg-fuchsia-600/40 selection:text-fuchsia-100">
+	<div class="hero-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+		<div class="max-w-md w-full space-y-8">
+			<!-- Header -->
+			<div class="text-center">
+				<h1 class="text-4xl font-extrabold grad-text mb-2">Admin Login</h1>
+				<p class="text-slate-400">Access the administrative dashboard</p>
+			</div>
+
+			<!-- Login Form -->
+			<div class="glow">
+				<form id="loginForm" autocomplete="off"
+					class="bg-slate-900/80 backdrop-blur-sm border border-slate-800/60 rounded-lg p-8 space-y-6">
+
+					<div>
+						<label for="username" class="block text-sm font-semibold text-slate-200 mb-2">Username</label>
+						<input type="text" id="username" name="username" required autofocus class="w-full px-4 py-3 text-slate-100 bg-slate-800/70 border border-slate-700/70 rounded-lg 
+								   focus:outline-none focus:ring-2 focus:ring-fuchsia-600 focus:border-transparent 
+								   placeholder-slate-400 transition-all" placeholder="Enter your username" />
+					</div>
+
+					<div>
+						<label for="password" class="block text-sm font-semibold text-slate-200 mb-2">Password</label>
+						<input type="password" id="password" name="password" required class="w-full px-4 py-3 text-slate-100 bg-slate-800/70 border border-slate-700/70 rounded-lg 
+								   focus:outline-none focus:ring-2 focus:ring-fuchsia-600 focus:border-transparent 
+								   placeholder-slate-400 transition-all" placeholder="Enter your password" />
+					</div>
+
+					<button type="submit" class="w-full py-3 px-4 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-semibold rounded-lg 
+							   shadow-lg shadow-fuchsia-600/25 transition-all hover:shadow-fuchsia-600/40 
+							   hover:transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-fuchsia-600">
+						Sign In
+					</button>
+
+					<div class="text-center">
+						<small class="text-slate-400 text-sm">
+							A secure JWT will be issued (HttpOnly cookie) valid for ~4 hours
+						</small>
+					</div>
+
+					<div id="err"
+						class="hidden p-3 bg-red-900/20 border border-red-700/30 rounded-lg text-red-300 text-sm"></div>
+				</form>
+			</div>
+
+			<div class="text-center">
+				<p class="text-xs text-slate-500">
+					🔒 On successful authentication, you will be redirected to the admin dashboard.
+					Keep this session private and secure.
+				</p>
+			</div>
+		</div>
+	</div>
+	<script>
+		const form = document.getElementById('loginForm');
+		const errBox = document.getElementById('err');
+
+		form.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			errBox.classList.add('hidden');
+
+			// Add loading state
+			const submitBtn = form.querySelector('button[type="submit"]');
+			const originalText = submitBtn.textContent;
+			submitBtn.textContent = 'Signing in...';
+			submitBtn.disabled = true;
+
+			const fd = new FormData(form);
+			const body = new URLSearchParams();
+			for (const [k, v] of fd.entries()) body.append(k, v);
+
+			try {
+				const r = await fetch('/adminLogin', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+					body
+				});
+
+				if (!r.ok) {
+					let msg = 'Authentication failed';
+					try {
+						const errorText = await r.text();
+						if (errorText) msg += ': ' + errorText;
+					} catch { }
+					throw new Error(msg);
+				}
+
+				const data = await r.json().catch(() => ({}));
+				if (data.token) {
+					sessionStorage.setItem('admintoken', data.token);
+				}
+
+				// Success animation
+				submitBtn.textContent = '✓ Success!';
+				submitBtn.classList.remove('bg-fuchsia-600', 'hover:bg-fuchsia-500');
+				submitBtn.classList.add('bg-green-600');
+
+				setTimeout(() => {
+					window.location.href = '/admin';
+				}, 1000);
+
+			} catch (err) {
+				errBox.textContent = err.message;
+				errBox.classList.remove('hidden');
+
+				// Reset button state
+				submitBtn.textContent = originalText;
+				submitBtn.disabled = false;
+			}
+		});
+	</script>
+</body>
+
+</html>

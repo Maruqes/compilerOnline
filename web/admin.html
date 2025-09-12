@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full scroll-smooth">
+
+<head>
+	<meta charset="UTF-8" />
+	<title>Admin Dashboard - 512lang</title>
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link
+		href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap"
+		rel="stylesheet">
+	<script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+	<link rel="stylesheet" href="/site.css" />
+</head>
+
+<body class="min-h-full bg-slate-950 text-slate-100 antialiased selection:bg-fuchsia-600/40 selection:text-fuchsia-100">
+	<div class="hero-bg min-h-screen py-8">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+			<!-- Header -->
+			<div class="text-center mb-12">
+				<h1 class="text-4xl md:text-5xl font-extrabold grad-text mb-4">Admin Dashboard</h1>
+				<p class="text-xl text-slate-300 mb-2">System monitoring and analytics</p>
+				<div class="flex items-center justify-center gap-2 text-sm text-slate-400">
+					<div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+					<span>Data auto-refreshes every 5 seconds</span>
+				</div>
+			</div>
+
+			<!-- Dashboard Grid -->
+			<div class="grid gap-8 lg:grid-cols-2">
+
+				<!-- Stats Card -->
+				<div class="glow">
+					<div class="bg-slate-900/80 backdrop-blur-sm border border-slate-800/60 rounded-lg overflow-hidden">
+						<div
+							class="px-6 py-4 bg-slate-800/60 border-b border-slate-700/60 flex items-center justify-between">
+							<h3 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+								<svg class="w-5 h-5 text-fuchsia-500" fill="none" stroke="currentColor"
+									viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+										d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+								</svg>
+								System Stats
+							</h3>
+							<button onclick="loadStats()" class="px-3 py-1.5 text-sm bg-fuchsia-600/20 hover:bg-fuchsia-600/30 
+									   text-fuchsia-300 border border-fuchsia-600/30 hover:border-fuchsia-500/50 
+									   rounded-lg transition-all">
+								Refresh
+							</button>
+						</div>
+						<div class="p-6">
+							<pre id="stats" class="bg-slate-950/60 text-slate-300 p-4 rounded-lg overflow-x-auto text-sm 
+									   font-mono leading-relaxed border border-slate-800/40 min-h-[200px]">Loading...</pre>
+						</div>
+					</div>
+				</div>
+
+				<!-- History Card -->
+				<div class="glow lg:col-span-2">
+					<div class="bg-slate-900/80 backdrop-blur-sm border border-slate-800/60 rounded-lg overflow-hidden">
+						<div
+							class="px-6 py-4 bg-slate-800/60 border-b border-slate-700/60 flex items-center justify-between flex-wrap gap-4">
+							<h3 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+								<svg class="w-5 h-5 text-fuchsia-500" fill="none" stroke="currentColor"
+									viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+										d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+								</svg>
+								Request History
+							</h3>
+							<div class="flex items-center gap-3">
+								<div class="flex items-center gap-2">
+									<label for="limit" class="text-sm text-slate-300">Limit:</label>
+									<input type="number" id="limit" value="25" min="1" max="500" class="w-20 px-2 py-1 text-sm bg-slate-800/70 border border-slate-700/70 
+											   rounded-md focus:outline-none focus:ring-1 focus:ring-fuchsia-600 
+											   text-slate-100" />
+								</div>
+								<button onclick="loadHistory()" class="px-3 py-1.5 text-sm bg-fuchsia-600/20 hover:bg-fuchsia-600/30 
+										   text-fuchsia-300 border border-fuchsia-600/30 hover:border-fuchsia-500/50 
+										   rounded-lg transition-all">
+									Refresh
+								</button>
+							</div>
+						</div>
+						<div class="p-6">
+							<pre id="history" class="bg-slate-950/60 text-slate-300 p-4 rounded-lg overflow-x-auto text-sm 
+									   font-mono leading-relaxed border border-slate-800/40 min-h-[300px] max-h-[600px] 
+									   overflow-y-auto">Loading...</pre>
+						</div>
+					</div>
+				</div>
+
+			</div>
+
+			<!-- Logs Section -->
+			<div class="mt-8">
+				<div class="glow">
+					<div class="bg-slate-900/80 backdrop-blur-sm border border-slate-800/60 rounded-lg overflow-hidden">
+						<div
+							class="px-6 py-4 bg-slate-800/60 border-b border-slate-700/60 flex items-center justify-between flex-wrap gap-4">
+							<h3 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+								<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor"
+									viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+										d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+								</svg>
+								System Logs
+							</h3>
+							<div class="flex gap-2 items-center">
+								<select id="logLevel" class="px-3 py-1.5 text-sm bg-slate-700 text-slate-200 border border-slate-600 
+										   rounded-lg">
+									<option value="">All Levels</option>
+									<option value="DEBUG">Debug</option>
+									<option value="INFO">Info</option>
+									<option value="WARN">Warn</option>
+									<option value="ERROR">Error</option>
+									<option value="FATAL">Fatal</option>
+								</select>
+								<input type="number" id="logLimit" placeholder="Limit" min="10" max="1000" value="100"
+									class="w-20 px-3 py-1.5 text-sm bg-slate-700 text-slate-200 border border-slate-600 
+									   rounded-lg">
+								<button onclick="loadLogs()" class="px-3 py-1.5 text-sm bg-blue-600/20 hover:bg-blue-600/30 
+										   text-blue-300 border border-blue-600/30 hover:border-blue-500/50 
+										   rounded-lg transition-all">
+									Refresh
+								</button>
+							</div>
+						</div>
+						<div class="p-6">
+							<div class="mb-4">
+								<div id="logStats" class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm"></div>
+							</div>
+							<div class="bg-slate-950/60 rounded-lg overflow-hidden border border-slate-800/40">
+								<div id="logs" class="p-4 text-sm font-mono leading-relaxed text-slate-300 min-h-[400px] 
+									   max-h-[600px] overflow-y-auto">Loading...</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Status Footer -->
+			<div class="mt-12 text-center">
+				<div class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/60 border border-slate-800/60 
+							rounded-full text-sm text-slate-400">
+					<svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+						<path fill-rule="evenodd"
+							d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+							clip-rule="evenodd" />
+					</svg>
+					Admin session active
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+		// Try to use token from sessionStorage (optional) if present; cookie already sent automatically.
+		function authHeaders() {
+			const t = sessionStorage.getItem('admintoken');
+			return t ? { 'Authorization': 'Bearer ' + t } : {};
+		}
+
+		async function loadStats() {
+			const statsEl = document.getElementById('stats');
+			statsEl.textContent = 'Loading...';
+
+			try {
+				const r = await fetch('/stats', {
+					headers: { 'Accept': 'application/json', ...authHeaders() }
+				});
+
+				if (r.status === 401) {
+					window.location = '/adminLogin';
+					return;
+				}
+
+				if (!r.ok) {
+					throw new Error(`${r.status} ${r.statusText}`);
+				}
+
+				const data = await r.json();
+				statsEl.textContent = JSON.stringify(data, null, 2);
+
+			} catch (e) {
+				statsEl.textContent = `❌ Error loading stats:\n${e.message}`;
+				statsEl.classList.add('text-red-300');
+			}
+		}
+
+		async function loadHistory() {
+			const limit = document.getElementById('limit').value || 25;
+			const historyEl = document.getElementById('history');
+			historyEl.textContent = 'Loading...';
+
+			try {
+				const r = await fetch(`/history?limit=${encodeURIComponent(limit)}`, {
+					headers: { 'Accept': 'application/json', ...authHeaders() }
+				});
+
+				if (r.status === 401) {
+					window.location = '/adminLogin';
+					return;
+				}
+
+				if (!r.ok) {
+					throw new Error(`${r.status} ${r.statusText}`);
+				}
+
+				const data = await r.json();
+				historyEl.textContent = JSON.stringify(data, null, 2);
+
+			} catch (e) {
+				historyEl.textContent = `❌ Error loading history:\n${e.message}`;
+				historyEl.classList.add('text-red-300');
+			}
+		}
+
+		async function loadLogs() {
+			const level = document.getElementById('logLevel').value;
+			const limit = document.getElementById('logLimit').value || 100;
+			const logsEl = document.getElementById('logs');
+			const logStatsEl = document.getElementById('logStats');
+
+			logsEl.textContent = 'Loading...';
+			logStatsEl.innerHTML = '';
+
+			try {
+				// Load log stats
+				const statsResponse = await fetch('/logs/stats', {
+					headers: { 'Accept': 'application/json', ...authHeaders() }
+				});
+
+				if (statsResponse.status === 401) {
+					window.location = '/adminLogin';
+					return;
+				}
+
+				if (statsResponse.ok) {
+					const statsData = await statsResponse.json();
+					const levels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
+					const colors = {
+						'DEBUG': 'text-gray-400',
+						'INFO': 'text-blue-400',
+						'WARN': 'text-yellow-400',
+						'ERROR': 'text-red-400',
+						'FATAL': 'text-red-600'
+					};
+
+					logStatsEl.innerHTML = levels.map(l => {
+						const count = statsData[l] || 0;
+						return `<div class="bg-slate-800/60 rounded-lg p-3 border border-slate-700/60">
+							<div class="${colors[l]} font-semibold">${l}</div>
+							<div class="text-slate-300 text-lg">${count}</div>
+						</div>`;
+					}).join('');
+				}
+
+				// Load logs
+				let url = `/logs?limit=${encodeURIComponent(limit)}`;
+				if (level) {
+					url += `&level=${encodeURIComponent(level)}`;
+				}
+
+				const logsResponse = await fetch(url, {
+					headers: { 'Accept': 'application/json', ...authHeaders() }
+				});
+
+				if (logsResponse.status === 401) {
+					window.location = '/adminLogin';
+					return;
+				}
+
+				if (!logsResponse.ok) {
+					throw new Error(`${logsResponse.status} ${logsResponse.statusText}`);
+				}
+
+				const logs = await logsResponse.json();
+
+				if (!logs || logs.length === 0) {
+					logsEl.textContent = 'No logs found';
+					return;
+				}
+
+				// Format logs with colors and structured display
+				const formattedLogs = logs.map(log => {
+					const timestamp = new Date(log.timestamp).toLocaleString();
+					const levelColors = {
+						'DEBUG': 'color: #9CA3AF;',
+						'INFO': 'color: #60A5FA;',
+						'WARN': 'color: #FBBF24;',
+						'ERROR': 'color: #F87171;',
+						'FATAL': 'color: #DC2626; font-weight: bold;'
+					};
+
+					let fieldsDisplay = '';
+					if (log.fields && log.fields !== '{}') {
+						try {
+							const fields = JSON.parse(log.fields);
+							fieldsDisplay = Object.keys(fields).length > 0 ?
+								`\n    Fields: ${JSON.stringify(fields, null, 6)}` : '';
+						} catch (e) {
+							fieldsDisplay = log.fields ? `\n    Fields: ${log.fields}` : '';
+						}
+					}
+
+					const callerDisplay = log.caller ? `\n    Caller: ${log.caller}` : '';
+
+					return `<div style="margin-bottom: 1rem; padding: 0.75rem; border-left: 3px solid ${levelColors[log.level]?.split(': ')[1]?.split(';')[0] || '#9CA3AF'}; background: rgba(15, 23, 42, 0.6);">
+<span style="color: #CBD5E1;">[${timestamp}]</span> <span style="${levelColors[log.level] || 'color: #9CA3AF;'}">${log.level}</span>: ${log.message}${fieldsDisplay}${callerDisplay}
+</div>`;
+				}).join('');
+
+				logsEl.innerHTML = formattedLogs;
+
+			} catch (e) {
+				logsEl.textContent = `❌ Error loading logs:\n${e.message}`;
+				logsEl.classList.add('text-red-300');
+			}
+		}
+
+		// Auto-refresh functionality
+		let autoRefreshInterval;
+
+		function startAutoRefresh() {
+			autoRefreshInterval = setInterval(() => {
+				loadStats();
+				// Don't auto-refresh history as it might be more expensive
+			}, 5000);
+		}
+
+		function stopAutoRefresh() {
+			if (autoRefreshInterval) {
+				clearInterval(autoRefreshInterval);
+				autoRefreshInterval = null;
+			}
+		}
+
+		// Initialize
+		loadStats();
+		loadHistory();
+		loadLogs();
+		startAutoRefresh();
+
+		// Stop auto-refresh when page is not visible (performance optimization)
+		document.addEventListener('visibilitychange', () => {
+			if (document.hidden) {
+				stopAutoRefresh();
+			} else {
+				startAutoRefresh();
+			}
+		});
+
+		// Handle limit input changes
+		document.getElementById('limit').addEventListener('change', loadHistory);
+	</script>
+</body>
+
+</html>
