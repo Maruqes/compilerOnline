@@ -100,48 +100,71 @@
             <p class="text-xl text-slate-300 mb-12 text-center max-w-2xl mx-auto">Practical snippets that show the
                 syntax and behavior of the language.</p>
 
-            <!-- Tab Navigation -->
-            <div
-                class="flex flex-wrap gap-1 mb-12 border-b border-slate-800/60 backdrop-blur-sm bg-slate-900/20 rounded-t-lg p-1">
-                <button
-                    class="tab-btn active px-5 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-fuchsia-500 bg-slate-800/60 text-fuchsia-300 shadow-sm"
-                    data-tab="variables">
-                    Variables
+            <!-- Tab Navigation: horizontally scrollable on small screens with arrows (more spacing) -->
+            <div class="relative mb-12">
+                <!-- Left arrow (visible only on small screens) -->
+                <button id="tabs-scroll-left" aria-hidden="true" aria-label="Scroll tabs left"
+                    class="absolute left-2 top-1/2 -translate-y-1/2 z-20 md:hidden flex items-center justify-center p-1 bg-slate-900/50 rounded">
+                    <svg class="w-5 h-5 text-slate-300 hover:text-slate-200" viewBox="0 0 20 20" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 4L6 10l6 6" />
+                    </svg>
                 </button>
-                <button
-                    class="tab-btn px-5 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
-                    data-tab="structs">
-                    Structs
-                </button>
-                <button
-                    class="tab-btn px-5 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
-                    data-tab="arithmetics">
-                    Arithmetic
-                </button>
-                <button
-                    class="tab-btn px-5 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
-                    data-tab="pointers">
-                    Pointers & Memory
-                </button>
-                <button
-                    class="tab-btn px-5 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
-                    data-tab="assembly">
-                    Embedded Assembly
-                </button>
-                <button
-                    class="tab-btn px-5 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
-                    data-tab="control">
-                    Control Flow
-                </button>
-                <button
-                    class="tab-btn px-5 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
-                    data-tab="globals">
-                    Globals
-                </button>
-                <button
-                    class="tab-btn px-5 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
-                    data-tab="arrays">
-                    Arrays
+
+                <!-- Scrollable tab row (more gap and padding, prevent shrinking) -->
+                <div id="tabs-scroll"
+                    class="flex gap-3 overflow-x-auto scrollbar-hide no-scrollbar snap-x snap-mandatory scroll-smooth px-4 py-2 border-b border-slate-800/60 backdrop-blur-sm bg-slate-900/20 rounded-t-lg">
+                    <button
+                        class="tab-btn flex-shrink-0 min-w-[10rem] md:min-w-[8rem] whitespace-nowrap px-6 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-fuchsia-500 bg-slate-800/60 text-fuchsia-300 shadow-sm snap-start"
+                        data-tab="variables">
+                        Variables
+                    </button>
+                    <button
+                        class="tab-btn flex-shrink-0 min-w-[10rem] md:min-w-[8rem] whitespace-nowrap px-6 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 snap-start"
+                        data-tab="structs">
+                        Structs
+                    </button>
+                    <button
+                        class="tab-btn flex-shrink-0 min-w-[10rem] md:min-w-[8rem] whitespace-nowrap px-6 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 snap-start"
+                        data-tab="arithmetics">
+                        Arithmetic
+                    </button>
+                    <button
+                        class="tab-btn flex-shrink-0 min-w-[10rem] md:min-w-[8rem] whitespace-nowrap px-6 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 snap-start"
+                        data-tab="pointers">
+                        Pointers & Memory
+                    </button>
+                    <button
+                        class="tab-btn flex-shrink-0 min-w-[10rem] md:min-w-[8rem] whitespace-nowrap px-6 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 snap-start"
+                        data-tab="assembly">
+                        Embedded Assembly
+                    </button>
+                    <button
+                        class="tab-btn flex-shrink-0 min-w-[10rem] md:min-w-[8rem] whitespace-nowrap px-6 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 snap-start"
+                        data-tab="control">
+                        Control Flow
+                    </button>
+                    <button
+                        class="tab-btn flex-shrink-0 min-w-[10rem] md:min-w-[8rem] whitespace-nowrap px-6 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 snap-start"
+                        data-tab="globals">
+                        Globals
+                    </button>
+                    <button
+                        class="tab-btn flex-shrink-0 min-w-[10rem] md:min-w-[8rem] whitespace-nowrap px-6 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 snap-start"
+                        data-tab="arrays">
+                        Arrays
+                    </button>
+                </div>
+
+                <!-- Right arrow (visible only on small screens) -->
+                <button id="tabs-scroll-right" aria-hidden="true" aria-label="Scroll tabs right"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 z-20 md:hidden flex items-center justify-center p-1 bg-slate-900/50 rounded">
+                    <svg class="w-5 h-5 text-slate-300 hover:text-slate-200" viewBox="0 0 20 20" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 4l6 6-6 6" />
+                    </svg>
                 </button>
             </div>
 
@@ -398,6 +421,78 @@
         });
 
         injectLayout('home');
+
+        // Tabs horizontal scroll controls for small screens
+        (function () {
+            const scroller = document.getElementById('tabs-scroll');
+            const leftBtn = document.getElementById('tabs-scroll-left');
+            const rightBtn = document.getElementById('tabs-scroll-right');
+
+            if (!scroller || !leftBtn || !rightBtn) return;
+
+            const updateButtons = () => {
+                // show/hide based on scroll position using opacity to avoid layout shift
+                const maxScroll = scroller.scrollWidth - scroller.clientWidth;
+                if (scroller.scrollLeft > 10) {
+                    leftBtn.style.opacity = '1';
+                    leftBtn.style.pointerEvents = 'auto';
+                } else {
+                    leftBtn.style.opacity = '0';
+                    leftBtn.style.pointerEvents = 'none';
+                }
+
+                if (scroller.scrollLeft < (maxScroll - 10)) {
+                    rightBtn.style.opacity = '1';
+                    rightBtn.style.pointerEvents = 'auto';
+                } else {
+                    rightBtn.style.opacity = '0';
+                    rightBtn.style.pointerEvents = 'none';
+                }
+            };
+
+            // Smooth scroll by one viewport width
+            const scrollByWidth = (dir = 1) => {
+                const amt = Math.max(scroller.clientWidth * 0.6, 160) * dir;
+                scroller.scrollBy({ left: amt, behavior: 'smooth' });
+            };
+
+            leftBtn.addEventListener('click', () => scrollByWidth(-1));
+            rightBtn.addEventListener('click', () => scrollByWidth(1));
+
+            scroller.addEventListener('scroll', () => {
+                // throttled-ish update
+                window.requestAnimationFrame(updateButtons);
+            });
+
+            // initialize state
+            updateButtons();
+
+            // Ensure clicking a tab scrolls it into view and shows content
+            const tabs = scroller.querySelectorAll('.tab-btn');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // scroll clicked tab into center view on small screens
+                    tab.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+
+                    // existing tab click logic already attached in DOMContentLoaded; ensure content toggles
+                    const targetTab = tab.getAttribute('data-tab');
+                    const tabContents = document.querySelectorAll('.tab-content');
+                    const tabButtons = document.querySelectorAll('.tab-btn');
+
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('active', 'border-fuchsia-500', 'bg-slate-800/60', 'text-fuchsia-300', 'shadow-sm');
+                        btn.classList.add('border-transparent', 'text-slate-400');
+                    });
+
+                    tab.classList.add('active', 'border-fuchsia-500', 'bg-slate-800/60', 'text-fuchsia-300', 'shadow-sm');
+                    tab.classList.remove('border-transparent', 'text-slate-400');
+
+                    tabContents.forEach(content => content.classList.add('hidden'));
+                    const targetContent = document.getElementById(targetTab);
+                    if (targetContent) targetContent.classList.remove('hidden');
+                });
+            });
+        })();
     </script> <!-- Scripts loaded with defer above -->
 </body>
 
