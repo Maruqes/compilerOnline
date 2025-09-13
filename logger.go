@@ -26,7 +26,7 @@ type sqliteCore struct {
 	enc   zapcore.Encoder
 	db    *sql.DB
 	stmt  *sql.Stmt
-	mu    sync.Mutex // serializa writes para reduzir 'database is locked'
+	mu    *sync.Mutex // shared among clones to serialize writes
 }
 
 // Enabled verifica se o nível está habilitado.
@@ -34,12 +34,11 @@ func (c *sqliteCore) Enabled(lvl zapcore.Level) bool { return lvl >= c.level }
 
 // With cria um novo core com campos adicionais anexados via encoder clone.
 func (c *sqliteCore) With(fields []zapcore.Field) zapcore.Core {
-	// Construir novo core compartilhando stmt/db mas com encoder clonado
 	enc := c.enc.Clone()
 	for _, f := range fields {
 		f.AddTo(enc)
 	}
-	return &sqliteCore{level: c.level, enc: enc, db: c.db, stmt: c.stmt}
+	return &sqliteCore{level: c.level, enc: enc, db: c.db, stmt: c.stmt, mu: c.mu}
 }
 
 // Check prepara a Entry.
@@ -149,7 +148,7 @@ func InitAppLogger(dbPath, levelStr string) (*zap.Logger, error) {
 		return nil, fmt.Errorf("prepare insert: %w", err)
 	}
 	// Core que grava no SQLite
-	sqliteC := &sqliteCore{level: lvl, enc: zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), db: db, stmt: stmt}
+	sqliteC := &sqliteCore{level: lvl, enc: zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), db: db, stmt: stmt, mu: &sync.Mutex{}}
 
 	// Core que escreve no stdout (console) usando encoder de console
 	consoleEncCfg := zap.NewDevelopmentEncoderConfig()

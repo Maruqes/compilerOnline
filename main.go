@@ -366,21 +366,34 @@ func main() {
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-		if path == "/" {
-			path = "/index.html"
+		p := r.URL.Path
+		switch p {
+		case "/":
+			p = "index.html"
+		case "/compiler":
+			p = "compiler.html"
+		default:
+			// trim leading slash for consistent relative handling
+			p = strings.TrimPrefix(p, "/")
 		}
-		if path == "/compiler" {
-			path = "/compiler.html"
+		// clean path and reject traversal attempts
+		clean := filepath.Clean(p)
+		if clean == "." {
+			clean = "index.html"
 		}
-		full := filepath.Join("web", filepath.Clean(path))
-		if _, err := os.Stat(full); err == nil {
+		// reject any attempt to escape web root
+		if strings.Contains(clean, "..") || strings.HasPrefix(clean, string(os.PathSeparator)) {
+			http.Error(w, "invalid path", http.StatusBadRequest)
+			return
+		}
+		full := filepath.Join("web", clean)
+		if fi, err := os.Stat(full); err == nil && !fi.IsDir() {
 			http.ServeFile(w, r, full)
 			return
 		}
 		http.NotFound(w, r)
 	})
-	// Rate limiter configuration
+	// Rate limiter configuration for public compile endpoint
 	ratePerMin := 30
 	if v := os.Getenv("RATE_LIMIT_PER_MIN"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
@@ -394,6 +407,24 @@ func main() {
 		}
 	}
 	ipLimiter := newIPLimiter(ratePerMin, burst)
+
+	// Separate limiter for admin login to slow brute force attempts (intentionally modest defaults)
+	adminRatePerMin := 20
+	if v := os.Getenv("ADMIN_LOGIN_RATE_LIMIT_PER_MIN"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			adminRatePerMin = n
+		}
+	}
+	adminBurst := adminRatePerMin
+	if v := os.Getenv("ADMIN_LOGIN_RATE_LIMIT_BURST"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			adminBurst = n
+		}
+	}
+	adminLimiter := newIPLimiter(adminRatePerMin, adminBurst)
+	go adminLimiter.cleanupLoop()
+
+	logger.Info("rate limiters configured", zap.Int("compile_per_min", ratePerMin), zap.Int("compile_burst", burst), zap.Int("admin_login_per_min", adminRatePerMin), zap.Int("admin_login_burst", adminBurst))
 	go ipLimiter.cleanupLoop()
 	http.Handle("/compile", rateLimitMiddleware(http.HandlerFunc(compileHandler), ipLimiter))
 
@@ -402,7 +433,7 @@ func main() {
 	http.HandleFunc("/history", requireAdmin(historyHandler))
 	http.HandleFunc("/logs", requireAdmin(logsHandler))
 	http.HandleFunc("/admin", requireAdmin(adminHandler))
-	http.HandleFunc("/adminLogin", adminHandlerLogin)
+	http.Handle("/adminLogin", rateLimitMiddleware(http.HandlerFunc(adminHandlerLogin), adminLimiter))
 
 	addr := ":" + port
 	logger.Info("server starting", zap.String("addr", addr))
