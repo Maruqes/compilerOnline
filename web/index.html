@@ -227,7 +227,8 @@
                             runs basic semantic checks and types, then walks the tree to drive codegen.</p>
                         <p class="text-slate-400 text-sm">Semantic checks</p>
                         <div class="mt-4">
-                            <pre><code class="language-go">if origin == ORIGIN_RBP {
+                            <div class="hidden sm:block">
+                                <pre><code class="language-go">if origin == ORIGIN_RBP {
     switch varType {
     case DB:
         backend.Sub64_r_i(byte(backend.REG_RSP), 1)
@@ -247,6 +248,7 @@
         vl.lastPos -= 8
     }
 }</code></pre>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -282,7 +284,8 @@
                         <p class="text-slate-300 leading-relaxed mb-4">The C backend encodes instructions directly.
                             No assembler, no LLVM. Operations map to byte sequences appended to a buffer.</p>
                         <div class="mt-4">
-                            <pre><code class="language-c">void mov64_r_i(uint8_t reg_code, uint64_t value)
+                            <div class="hidden sm:block">
+                                <pre><code class="language-c">void mov64_r_i(uint8_t reg_code, uint64_t value)
 {
     // REX + opcode + immediate (1 + 1 + 8)
     char *opcode_bytes = malloc(10);
@@ -312,6 +315,7 @@
 
     op_codes_array[op_codes_array_size++] = new_opcode;
 }</code></pre>
+                            </div>
                         </div>
                     </div>
                 </div>
