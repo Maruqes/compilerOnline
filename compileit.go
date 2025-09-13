@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -75,16 +74,14 @@ func sandboxSpecOpt() oci.SpecOpts {
 		var cpuShares *uint64
 		cpuShares = func() *uint64 { v := uint64(256); return &v }()
 		cpuPeriod = func() *uint64 { v := uint64(100000); return &v }()
-		if pctStr := os.Getenv("SANDBOX_CPU_QUOTA_PERCENT"); pctStr != "" {
-			if pctStr == "0" {
-				cpuQuota = nil // unlimited (subject to host scheduling)
-			} else if pct, err := strconv.Atoi(pctStr); err == nil && pct > 0 && pct <= 1000 { // allow up to 1000% for multi-core pinning
-				q := int64(pct) * int64(*cpuPeriod) / 100
-				cpuQuota = &q
-			} // silently ignore invalid
+		if appConfig != nil && appConfig.SandboxCPUQuotaPercent > 0 {
+			pct := appConfig.SandboxCPUQuotaPercent
+			q := int64(pct) * int64(*cpuPeriod) / 100
+			cpuQuota = &q
+		} else if appConfig != nil && appConfig.SandboxCPUQuotaPercent == 0 {
+			cpuQuota = nil // explicit unlimited
 		} else {
-			// default small slice ~10% of a CPU: period 100000 -> quota 10000
-			q := int64(10000)
+			q := int64(10000) // default ~10%
 			cpuQuota = &q
 		}
 		s.Linux.Resources = &specs.LinuxResources{
@@ -180,11 +177,11 @@ func execInKata(code string) (string, string, error) {
 
 	// namespace context
 	ctx := namespaces.WithNamespace(context.Background(), "compiler")
-	// ensure base image once (configurable via SANDBOX_BASE_IMAGE, fallback docker.io/library/busybox:latest)
+	// ensure base image once using configured base image
 	ensureStart := phaseStart
-	baseRef := os.Getenv("SANDBOX_BASE_IMAGE")
-	if baseRef == "" {
-		baseRef = "docker.io/library/busybox:latest"
+	baseRef := "docker.io/library/busybox:latest"
+	if appConfig != nil && appConfig.SandboxBaseImage != "" {
+		baseRef = appConfig.SandboxBaseImage
 	}
 	img, cached, pullErr := ensureBaseImage(ctx, baseRef)
 	if pullErr != nil {
@@ -211,10 +208,10 @@ func execInKata(code string) (string, string, error) {
 
 	uniqueID := fmt.Sprintf("kata-sandbox-%d", time.Now().UnixNano())
 
-	// Allow runtime override: default kata, optionally runc for lower startup latency
-	runtimeName := os.Getenv("SANDBOX_RUNTIME")
-	if runtimeName == "" {
-		runtimeName = "io.containerd.kata.v2"
+	// Allow runtime override from config
+	runtimeName := "io.containerd.kata.v2"
+	if appConfig != nil && appConfig.SandboxRuntime != "" {
+		runtimeName = appConfig.SandboxRuntime
 	}
 
 	specOpts := []oci.SpecOpts{

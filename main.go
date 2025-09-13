@@ -22,6 +22,7 @@ import (
 var logger *zap.Logger
 var adminUser string
 var adminPass string
+var appConfig *Config
 var kataExecTimeout time.Duration
 
 // ContainerHistory armazena o histórico completo de todos os containers
@@ -309,44 +310,37 @@ func main() {
 		return
 	}
 
+	// Load .env first so LoadConfig sees variables
+	const envFile = ".env"
+	if _, err := os.Stat(envFile); os.IsNotExist(err) {
+		panic("environment file does not exist: .env")
+	}
+	if err := godotenv.Load(envFile); err != nil {
+		panic("error loading env file: " + err.Error())
+	}
+
+	cfg, err := LoadConfig()
+	if err != nil {
+		panic("config load failed: " + err.Error())
+	}
+	appConfig = cfg
+	adminUser = cfg.AdminUser
+	adminPass = cfg.AdminPass
+
 	// Inicializa logger custom que grava em SQLite (data/logs.sql)
 	logDBPath := "data/logs.sql" // extensão .sql como solicitado
-	l, err := InitAppLogger(logDBPath, os.Getenv("LOG_LEVEL"))
+	l, err := InitAppLogger(logDBPath, cfg.LogLevel)
 	if err != nil {
 		panic(fmt.Sprintf("cannot init sqlite logger: %v", err))
 	}
 	defer l.Sync()
 	logger = l
 
-	const envFile = ".env"
-
-	if _, err := os.Stat(envFile); os.IsNotExist(err) {
-		logger.Fatal("environment file does not exist", zap.String("file", envFile))
-	}
-
-	if err := godotenv.Load(envFile); err != nil {
-		logger.Fatal("error loading env file", zap.String("file", envFile), zap.Error(err))
-	}
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		logger.Fatal("missing PORT env variable", zap.String("file", envFile))
-	}
-
-	adminUser = os.Getenv("ADMIN_USER")
-	if adminUser == "" {
-		logger.Fatal("missing ADMIN_USER env variable (username for protected endpoints)")
-	}
-	adminPass = os.Getenv("ADMIN_PASS")
-	if adminPass == "" {
-		logger.Fatal("missing ADMIN_PASS env variable (password for protected endpoints)")
-	}
+	// Print sanitized config
+	logger.Info("config loaded", zap.String("port", cfg.Port), zap.String("log_level", cfg.LogLevel), zap.String("sandbox_base_image", cfg.SandboxBaseImage), zap.String("sandbox_runtime", cfg.SandboxRuntime), zap.Int("sandbox_cpu_quota_percent", cfg.SandboxCPUQuotaPercent), zap.Duration("kata_exec_timeout", cfg.KataExecTimeout), zap.Int("rate_limit_per_min", cfg.RateLimitPerMin), zap.Int("rate_limit_burst", cfg.RateLimitBurst), zap.Int("admin_login_rate_per_min", cfg.AdminLoginRateLimitPerMin), zap.Int("admin_login_rate_burst", cfg.AdminLoginRateLimitBurst))
 
 	// Base image preload (pull once at startup so first user request is fast)
-	baseRef := os.Getenv("SANDBOX_BASE_IMAGE")
-	if baseRef == "" {
-		baseRef = "docker.io/library/busybox:latest"
-	}
+	baseRef := cfg.SandboxBaseImage
 	ctx := namespaces.WithNamespace(context.Background(), "compiler")
 	if _, cached, err := ensureBaseImage(ctx, baseRef); err != nil {
 		logger.Fatal("preload base image", zap.String("image", baseRef), zap.Error(err))
@@ -354,13 +348,8 @@ func main() {
 		logger.Info("base image ready", zap.String("image", baseRef), zap.Bool("cached", cached))
 	}
 
-	// Kata exec timeout (seconds); default 10 if unset/invalid/<=0
-	kataExecTimeout = 10 * time.Second
-	if v := os.Getenv("KATA_EXEC_TIMEOUT_SECONDS"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			kataExecTimeout = time.Duration(n) * time.Second
-		}
-	}
+	// Kata exec timeout from config
+	kataExecTimeout = cfg.KataExecTimeout
 	logger.Info("kata exec timeout configured", zap.Duration("timeout", kataExecTimeout))
 
 	// Initialize SQLite DB for history
@@ -403,33 +392,13 @@ func main() {
 		http.NotFound(w, r)
 	})
 	// Rate limiter configuration for public compile endpoint
-	ratePerMin := 30
-	if v := os.Getenv("RATE_LIMIT_PER_MIN"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			ratePerMin = n
-		}
-	}
-	burst := ratePerMin
-	if v := os.Getenv("RATE_LIMIT_BURST"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			burst = n
-		}
-	}
+	ratePerMin := cfg.RateLimitPerMin
+	burst := cfg.RateLimitBurst
 	ipLimiter := newIPLimiter(ratePerMin, burst)
 
-	// Separate limiter for admin login to slow brute force attempts (intentionally modest defaults)
-	adminRatePerMin := 20
-	if v := os.Getenv("ADMIN_LOGIN_RATE_LIMIT_PER_MIN"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			adminRatePerMin = n
-		}
-	}
-	adminBurst := adminRatePerMin
-	if v := os.Getenv("ADMIN_LOGIN_RATE_LIMIT_BURST"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			adminBurst = n
-		}
-	}
+	// Separate limiter for admin login
+	adminRatePerMin := cfg.AdminLoginRateLimitPerMin
+	adminBurst := cfg.AdminLoginRateLimitBurst
 	adminLimiter := newIPLimiter(adminRatePerMin, adminBurst)
 	go adminLimiter.cleanupLoop()
 
@@ -444,7 +413,7 @@ func main() {
 	http.HandleFunc("/admin", requireAdmin(adminHandler))
 	http.Handle("/adminLogin", rateLimitMiddleware(http.HandlerFunc(adminHandlerLogin), adminLimiter))
 
-	addr := ":" + port
+	addr := ":" + cfg.Port
 	logger.Info("server starting", zap.String("addr", addr))
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		logger.Fatal("server exited", zap.Error(err))

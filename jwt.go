@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -15,7 +14,10 @@ var jwtSecret []byte
 
 // initJWT loads secret from env (JWT_SECRET) or falls back to ADMIN_PASS.
 func initJWT() error {
-	sec := os.Getenv("JWT_SECRET")
+	sec := ""
+	if appConfig != nil {
+		sec = appConfig.JWTSecret
+	}
 	if sec == "" {
 		sec = adminPass // already validated in main
 	}
