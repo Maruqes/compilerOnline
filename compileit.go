@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"fmt"
 	"os"
 	"os/exec"
@@ -97,9 +98,16 @@ func buildExecutionScript(code string) (string, error) {
 	if len(code) > 5000 {
 		return "", ErrLimitChar5k
 	}
-	delim := "LANGCODE_EOF"
-	if strings.Contains(code, delim) {
-		delim = fmt.Sprintf("LANGCODE_EOF_%d", time.Now().UnixNano())
+	randBytes := make([]byte, 8)
+	if _, err := rand.Read(randBytes); err != nil {
+		return "", fmt.Errorf("generate delimiter: %w", err)
+	}
+	delim := fmt.Sprintf("LANGCODE_EOF_%x_%d", randBytes, time.Now().UnixNano())
+	for strings.Contains(code, delim) {
+		if _, err := rand.Read(randBytes); err != nil {
+			return "", fmt.Errorf("regenerate delimiter: %w", err)
+		}
+		delim = fmt.Sprintf("LANGCODE_EOF_%x_%d", randBytes, time.Now().UnixNano())
 	}
 	script := fmt.Sprintf(`set -euo pipefail
 TMPDIR=$(mktemp -d /tmp/sandbox-XXXX)

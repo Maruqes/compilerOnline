@@ -33,14 +33,40 @@
 			</a>
 		</p>
 		<h1>Privacy Policy</h1>
-		<p>This site is static and does not use cookies, trackers, or analytics.</p>
+		<p>This site does not use marketing cookies, trackers, or analytics scripts. It operates an online compiler
+			feature which stores limited technical data needed to run the service securely.</p>
 
-		<h2>What is processed</h2>
+		<h2>What We Collect & Store</h2>
+		<p>When you submit code to the online compiler we create an execution record in our own SQLite databases located
+			on the server. A single execution record currently contains:</p>
 		<ul>
-			<li>Your IP address and user agent may be processed by third-party CDNs when loading assets.</li>
+			<li><strong>container_id</strong> – internal sandbox identifier</li>
+			<li><strong>created_at / finished_at</strong> – timestamps of start and end</li>
+			<li><strong>execution_time_ms</strong> – total wall time in milliseconds</li>
+			<li><strong>ip</strong> – your apparent client IP (extracted from <code>X-Forwarded-For</code>,
+				<code>X-Real-IP</code> or the TCP connection)</li>
+			<li><strong>code_executed</strong> – the full source code you submitted</li>
+			<li><strong>output</strong> – combined stdout/stderr (truncated to 64KB)</li>
+			<li><strong>error_message</strong> – error or timeout message if execution failed</li>
+		</ul>
+		<p>Application logs are also stored in a separate SQLite database and may include:</p>
+		<ul>
+			<li><strong>ts</strong> – timestamp</li>
+			<li><strong>level</strong> – log level (info, warn, error, etc.)</li>
+			<li><strong>message</strong> – event description</li>
+			<li><strong>caller / stack</strong> – source location and stack trace for errors</li>
+		</ul>
+		<p>Rate limiting is enforced in-memory only; we keep a short‑lived token bucket per IP (not written to disk) for
+			abuse prevention. No analytics profiling is performed.</p>
+
+		<h2>How We Use This Data</h2>
+		<ul>
+			<li>Provide the compile/execute functionality and return results</li>
+			<li>Diagnose reliability or security issues (error logs / stack traces)</li>
+			<li>Investigate abuse (excessive usage, malicious code) using IP + code snippet</li>
 		</ul>
 
-		<h2>Third parties</h2>
+		<h2>Third Parties</h2>
 		<ul>
 			<li>Google Fonts (fonts.googleapis.com / fonts.gstatic.com)</li>
 			<li>cdnjs.cloudflare.com (Prism.js)</li>
@@ -50,40 +76,48 @@
 		<p>These providers receive your IP to deliver content. No profiling or identification is intended by this site.
 		</p>
 
-		<h2>Data retention</h2>
-		<p>We do not store data. Transient logs may exist with providers under their policies.</p>
-
-		<h2>Online compiler inputs</h2>
-		<p>If we provide an online compiler, any code you submit ("Inputs") will be processed only to compile, run, and
-			return results to you. We do not claim ownership over your Inputs.</p>
-
+		<h2>Data Retention</h2>
 		<ul>
-			<li><strong>Processing scope:</strong> compile/execute Inputs and deliver output/errors back to you.</li>
-			<li><strong>Ephemeral handling:</strong> Inputs/outputs are intended to be processed in memory or retained
-				only briefly as needed to operate the service.</li>
-			<li><strong>Operational logs:</strong> limited technical logs may include error traces or small snippets for
-				diagnostics and abuse prevention; we aim to minimize retention.</li>
+			<li><strong>Execution history:</strong> records (code, IP, output, error) are automatically pruned after ~90
+				days.</li>
+			<li><strong>Application logs:</strong> log entries (including stack traces) are also pruned after ~90 days.
+			</li>
+			<li><strong>In‑memory rate limit state:</strong> cleared after ~10 minutes of inactivity per IP.</li>
+		</ul>
+		<p>We may delete data earlier during maintenance. Backups (if any) would follow the same retention window.</p>
+
+		<h2>Online Compiler Inputs</h2>
+		<p>Any code you submit ("Inputs") is stored exactly as provided in the execution history described above. We do
+			not claim ownership; you retain all rights in your code. Do not submit proprietary or sensitive material.
+		</p>
+		<ul>
+			<li><strong>Scope:</strong> Used only to compile/run and show you results, plus limited abuse review.</li>
+			<li><strong>Visibility:</strong> Execution records are accessible only through authenticated admin
+				endpoints.</li>
+			<li><strong>Truncation:</strong> Output is truncated to protect resources; code limit is 5000 characters.
+			</li>
 		</ul>
 
-		<h2>Please avoid personal data</h2>
+		<h2>Please Avoid Personal Data</h2>
 		<p>Do not submit personal data, credentials, or proprietary secrets in Inputs. The service is meant for code
 			samples only.</p>
 
-		<h2>Security and sandbox</h2>
+		<h2>Security & Sandbox</h2>
 		<p>Inputs may run in isolated sandboxes with resource limits. No system is perfectly secure; results are
 			provided on an <em>as‑is</em> basis.</p>
 
-		<h2>Your choices</h2>
+		<h2>Your Choices</h2>
 		<ul>
 			<li>You can block third‑party requests in your browser.</li>
 		</ul>
 
-		<h2>Legal basis</h2>
+		<h2>Legal Basis</h2>
 		<p>Legitimate interests to serve static content and operate the online compiler (GDPR/LGPD). Where applicable,
 			processing is necessary to provide the requested service.</p>
 
 		<h2>Contact</h2>
-		<p>Questions: <a href="mailto:marquesgoncalo512@gmail.com">marquesgoncalo512@gmail.com</a></p>
+		<p>Questions or data removal requests: <a
+				href="mailto:marquesgoncalo512@gmail.com">marquesgoncalo512@gmail.com</a></p>
 
 		<p class="text-sm text-slate-400">Software under <a
 				href="https://github.com/Maruqes/compiler/blob/main/LICENSE">GPL-3.0</a>. This document is informational
