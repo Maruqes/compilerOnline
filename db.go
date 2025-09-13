@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -53,7 +52,6 @@ func migrate() error {
 		finished_at TIMESTAMP NOT NULL,
 		execution_time_ms INTEGER NOT NULL,
 		ip TEXT,
-		timings_json TEXT,
 		code_executed TEXT,
 		output TEXT,
 		error_message TEXT
@@ -71,9 +69,6 @@ func migrate() error {
 	// Ensure the ip column exists (added after initial minimal schema).
 	if err := ensureIPColumn(); err != nil {
 		return fmt.Errorf("ensure ip column: %w", err)
-	}
-	if err := ensureTimingsColumn(); err != nil {
-		return fmt.Errorf("ensure timings column: %w", err)
 	}
 	return nil
 }
@@ -143,7 +138,6 @@ func ensureMinimalSchema() error {
 		finished_at TIMESTAMP NOT NULL,
 		execution_time_ms INTEGER NOT NULL,
 		ip TEXT,
-		timings_json TEXT,
 		code_executed TEXT,
 		output TEXT,
 		error_message TEXT
@@ -153,24 +147,18 @@ func ensureMinimalSchema() error {
 	if _, err = tx.Exec(`CREATE INDEX IF NOT EXISTS idx_containers_created_at_new ON containers_new(created_at)`); err != nil {
 		return err
 	}
-	// Determine if old table had ip & timings_json columns; copy them if present.
+	// Determine if old table had ip column; copy it if present.
 	existingHasIP := false
-	existingHasTimings := false
 	for _, c := range cols {
 		if c == "ip" {
 			existingHasIP = true
-		}
-		if c == "timings_json" {
-			existingHasTimings = true
 		}
 	}
 	copyCols := []string{"container_id", "created_at", "finished_at", "execution_time_ms"}
 	if existingHasIP {
 		copyCols = append(copyCols, "ip")
 	}
-	if existingHasTimings {
-		copyCols = append(copyCols, "timings_json")
-	}
+	// timings_json dropped
 	copyCols = append(copyCols, "code_executed", "output", "error_message")
 	selCols := strings.Join(copyCols, ",")
 	if _, err = tx.Exec(`INSERT INTO containers_new (` + selCols + `) SELECT ` + selCols + ` FROM containers`); err != nil {
@@ -222,33 +210,7 @@ func ensureIPColumn() error {
 }
 
 // ensureTimingsColumn adds the timings_json column if missing.
-func ensureTimingsColumn() error {
-	rows, err := db.Query(`PRAGMA table_info(containers)`)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-	has := false
-	for rows.Next() {
-		var cid int
-		var name, ctype string
-		var notnull, pk int
-		var dflt interface{}
-		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
-			return err
-		}
-		if name == "timings_json" {
-			has = true
-		}
-	}
-	if has {
-		return nil
-	}
-	if _, err := db.Exec(`ALTER TABLE containers ADD COLUMN timings_json TEXT`); err != nil {
-		return fmt.Errorf("add timings_json column: %w", err)
-	}
-	return nil
-}
+// timings_json column removal: no longer ensured
 
 func pruneOld() error {
 	cutoff := time.Now().Add(-retentionPeriod)
@@ -269,22 +231,14 @@ func saveContainerRecordDB(r *ContainerRecord) error {
 	if db == nil {
 		return errors.New("db not initialized")
 	}
-	var timingsJSON *string
-	if r.Timings != nil {
-		if b, err := json.Marshal(r.Timings); err == nil {
-			js := string(b)
-			timingsJSON = &js
-		}
-	}
-	stmt := `INSERT INTO containers (container_id, created_at, finished_at, execution_time_ms, ip, timings_json, code_executed, output, error_message)
-			 VALUES (?,?,?,?,?,?,?,?,?)`
+	stmt := `INSERT INTO containers (container_id, created_at, finished_at, execution_time_ms, ip, code_executed, output, error_message)
+			 VALUES (?,?,?,?,?,?,?,?)`
 	_, err := db.Exec(stmt,
 		r.ContainerID,
 		r.CreatedAt.UTC(),
 		r.FinishedAt.UTC(),
 		r.ExecutionTime.Milliseconds(),
 		r.IP,
-		timingsJSON,
 		r.CodeExecuted,
 		r.Output,
 		r.ErrorMessage,
@@ -299,7 +253,7 @@ func listContainerRecords(limit int) ([]ContainerRecord, error) {
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	rows, err := db.Query(`SELECT container_id, created_at, finished_at, execution_time_ms, COALESCE(ip,'') as ip, timings_json, code_executed, output, error_message
+	rows, err := db.Query(`SELECT container_id, created_at, finished_at, execution_time_ms, COALESCE(ip,'') as ip, code_executed, output, error_message
 			FROM containers ORDER BY created_at DESC LIMIT ?`, limit)
 	if err != nil {
 		return nil, err
@@ -309,15 +263,8 @@ func listContainerRecords(limit int) ([]ContainerRecord, error) {
 	for rows.Next() {
 		var r ContainerRecord
 		var execMs int64
-		var timingsNullable *string
-		if err := rows.Scan(&r.ContainerID, &r.CreatedAt, &r.FinishedAt, &execMs, &r.IP, &timingsNullable, &r.CodeExecuted, &r.Output, &r.ErrorMessage); err != nil {
+		if err := rows.Scan(&r.ContainerID, &r.CreatedAt, &r.FinishedAt, &execMs, &r.IP, &r.CodeExecuted, &r.Output, &r.ErrorMessage); err != nil {
 			return nil, err
-		}
-		if timingsNullable != nil && *timingsNullable != "" {
-			var tm map[string]int64
-			if err := json.Unmarshal([]byte(*timingsNullable), &tm); err == nil {
-				r.Timings = tm
-			}
 		}
 		r.ExecutionTime = time.Duration(execMs) * time.Millisecond
 		out = append(out, r)

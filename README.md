@@ -11,7 +11,7 @@ A small web service that compiles and runs code for a custom language inside an 
 6. Each execution now stores the originating client IP for audit/rate limiting groundwork.
 
 ### Why Kata?
-Stronger isolation than a plain container: lightweight VM boundary + resource limits (CPU quota, 128MB RAM, pid, rlimits, 5s wall clock timeout).
+Stronger isolation than a plain container: lightweight VM boundary + resource limits (CPU quota, 128MB RAM, pid, rlimits, configurable wall clock timeout).
 
 ### Files that matter
 - `compileit.go` – does the sandbox run
@@ -35,28 +35,13 @@ JWT_SECRET=superLongRandomSecretValueAtLeast16  # If set, replaces fallback
 LOG_LEVEL=info   # debug|info|warn|error (default info)
 RATE_LIMIT_PER_MIN=30   # Max average requests per minute per IP to /compile (default 30)
 RATE_LIMIT_BURST=30     # Burst capacity (default equals RATE_LIMIT_PER_MIN)
+KATA_EXEC_TIMEOUT_SECONDS=10  # Wall clock timeout for a single execution (default 10 if unset/<=0)
 ```
 Rules:
 - JWT secret (or admin pass) must be at least 16 chars.
 - If `.env` is missing the program exits.
 
-### 
-```bash
-# Update
-sudo apt update && sudo apt upgrade -y
-
-# Install required packages
-sudo apt install -y curl gnupg2 software-properties-common apt-transport-https ca-certificates
-
-# Install containerd
-sudo apt install -y containerd
-
-# Enable and start
-sudo systemctl enable containerd
-sudo systemctl start containerd
-
-
-```
+See `https://github.com/kata-containers/kata-containers/tree/main/docs/install`
 
 ### Run
 Needs Linux + containerd + Kata runtime installed & working.
@@ -70,9 +55,8 @@ Admin login: visit `/adminLogin` (uses cookie `admintoken`). Protected: `/admin`
 ### Data
 - History: `data/containers.db` (old rows >90 days pruned daily)
 - Logs: `data/logs.sql` (structured JSON style + stack on errors)
- - History columns: `container_id, created_at, finished_at, execution_time_ms, ip, code_executed, output, error_message`
+- History columns: `container_id, created_at, finished_at, execution_time_ms, ip, code_executed, output, error_message`
 
-Migration note: existing deployments automatically `ALTER TABLE` to add the nullable `ip` column on startup; no manual step required.
 
 ### Typical problems
 | Symptom                           | Fix                                          |
@@ -82,6 +66,7 @@ Migration note: existing deployments automatically `ALTER TABLE` to add the null
 | "missing lang directory"          | Ensure `lang/` exists with `compiler` inside |
 | Long first run                    | Pulling Ubuntu image                         |
 | JWT secret too short              | Use ≥16 chars                                |
+| Execution always stops at N sec   | Adjust `KATA_EXEC_TIMEOUT_SECONDS`           |
 
 ### Hardening ideas (not done yet)
 - Rate limiting / quotas
