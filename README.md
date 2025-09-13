@@ -36,6 +36,8 @@ LOG_LEVEL=info   # debug|info|warn|error (default info)
 RATE_LIMIT_PER_MIN=30   # Max average requests per minute per IP to /compile (default 30)
 RATE_LIMIT_BURST=30     # Burst capacity (default equals RATE_LIMIT_PER_MIN)
 KATA_EXEC_TIMEOUT_SECONDS=10  # Wall clock timeout for a single execution (default 10 if unset/<=0)
+SANDBOX_RUNTIME=io.containerd.kata.v2  # Override container runtime; set to io.containerd.runc.v2 for faster (less isolated) startup
+SANDBOX_CPU_QUOTA_PERCENT=10          # Integer percent of a single CPU period (100000). 0 to remove quota. Default ~10% if unset.
 ```
 Rules:
 - JWT secret (or admin pass) must be at least 16 chars.
@@ -51,6 +53,11 @@ Needs Linux + containerd + Kata runtime installed & working.
 Open: `http://localhost:8080/`
 
 Admin login: visit `/adminLogin` (uses cookie `admintoken`). Protected: `/admin`, `/stats`, `/history`, `/logs`.
+
+### Runtime / performance notes
+- Runtime selection: `SANDBOX_RUNTIME=io.containerd.runc.v2` typically reduces `start task` latency vs Kata (trade: weaker isolation).
+- CPU quota: Raising or disabling (`SANDBOX_CPU_QUOTA_PERCENT=0`) can shorten compile time for CPU-heavy code.
+- Per-run script now prints `[compile-time-ms]` and `[run-time-ms]` plus stderr sections to help pinpoint slow phases.
 
 ### Data
 - History: `data/containers.db` (old rows >90 days pruned daily)

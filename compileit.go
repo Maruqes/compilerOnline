@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -68,12 +69,26 @@ func sandboxSpecOpt() oci.SpecOpts {
 		if s.Linux == nil {
 			s.Linux = &specs.Linux{}
 		}
+		// CPU quota percent environment variable: e.g. 50 -> half CPU, 0 or empty -> no explicit quota
+		var cpuQuota *int64
+		var cpuPeriod *uint64
+		var cpuShares *uint64
+		cpuShares = func() *uint64 { v := uint64(256); return &v }()
+		cpuPeriod = func() *uint64 { v := uint64(100000); return &v }()
+		if pctStr := os.Getenv("SANDBOX_CPU_QUOTA_PERCENT"); pctStr != "" {
+			if pctStr == "0" {
+				cpuQuota = nil // unlimited (subject to host scheduling)
+			} else if pct, err := strconv.Atoi(pctStr); err == nil && pct > 0 && pct <= 1000 { // allow up to 1000% for multi-core pinning
+				q := int64(pct) * int64(*cpuPeriod) / 100
+				cpuQuota = &q
+			} // silently ignore invalid
+		} else {
+			// default small slice ~10% of a CPU: period 100000 -> quota 10000
+			q := int64(10000)
+			cpuQuota = &q
+		}
 		s.Linux.Resources = &specs.LinuxResources{
-			CPU: &specs.LinuxCPU{
-				Shares: func() *uint64 { v := uint64(256); return &v }(),
-				Quota:  func() *int64 { v := int64(10000); return &v }(),
-				Period: func() *uint64 { v := uint64(100000); return &v }(),
-			},
+			CPU: &specs.LinuxCPU{Shares: cpuShares, Quota: cpuQuota, Period: cpuPeriod},
 			Memory: &specs.LinuxMemory{
 				Limit: func() *int64 { v := int64(128 * 1024 * 1024); return &v }(),
 				Swap:  func() *int64 { v := int64(128 * 1024 * 1024); return &v }(),
@@ -192,6 +207,12 @@ func execInKata(code string) (string, string, error) {
 
 	uniqueID := fmt.Sprintf("kata-sandbox-%d", time.Now().UnixNano())
 
+	// Allow runtime override: default kata, optionally runc for lower startup latency
+	runtimeName := os.Getenv("SANDBOX_RUNTIME")
+	if runtimeName == "" {
+		runtimeName = "io.containerd.kata.v2"
+	}
+
 	specOpts := []oci.SpecOpts{
 		oci.WithImageConfig(img),
 		oci.WithProcessArgs("/bin/bash", "-lc", script),
@@ -221,7 +242,7 @@ func execInKata(code string) (string, string, error) {
 		uniqueID,
 		containerd.WithNewSnapshot(uniqueID+"-snap", img),
 		containerd.WithNewSpec(specOpts...),
-		containerd.WithRuntime("io.containerd.kata.v2", nil),
+		containerd.WithRuntime(runtimeName, nil),
 	)
 	if err != nil {
 		return "", uniqueID, fmt.Errorf("create container: %w", err)
