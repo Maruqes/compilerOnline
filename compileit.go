@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -21,6 +22,43 @@ import (
 )
 
 var ErrLimitChar5k = fmt.Errorf("code exceeds 5000 character limit")
+
+// Global cached containerd client and base image
+var (
+	ctrdClient *containerd.Client
+	clientOnce sync.Once
+	clientErr  error
+
+	baseImage   containerd.Image
+	imagePulled bool
+	imageMu     sync.Mutex
+)
+
+func getContainerdClient() (*containerd.Client, error) {
+	clientOnce.Do(func() {
+		ctrdClient, clientErr = containerd.New("/run/containerd/containerd.sock")
+	})
+	return ctrdClient, clientErr
+}
+
+func ensureBaseImage(ctx context.Context, ref string) (containerd.Image, bool, error) {
+	imageMu.Lock()
+	defer imageMu.Unlock()
+	if imagePulled {
+		return baseImage, true, nil
+	}
+	c, err := getContainerdClient()
+	if err != nil {
+		return nil, false, err
+	}
+	img, err := c.Pull(ctx, ref, containerd.WithPullUnpack)
+	if err != nil {
+		return nil, false, err
+	}
+	baseImage = img
+	imagePulled = true
+	return baseImage, false, nil
+}
 
 // sandboxSpecOpt returns a SpecOpt applying mounts, limits, and hardening.
 func sandboxSpecOpt() oci.SpecOpts {
@@ -108,23 +146,28 @@ func execInKata(code string) (string, string, error) {
 		return "", "", nil
 	}
 
-	//connect to containerd
-	client, err := containerd.New("/run/containerd/containerd.sock")
+	// connect (or reuse) containerd client
+	clientStart := phaseStart
+	client, err := getContainerdClient()
 	if err != nil {
 		return "", "", fmt.Errorf("containerd client: %w", err)
 	}
-	defer client.Close()
-	fmt.Printf("[timing] connect containerd: %v\n", time.Since(phaseStart))
+	fmt.Printf("[timing] get/reuse containerd client: %v\n", time.Since(clientStart))
 	phaseStart = time.Now()
 
-	//set namespace / image
+	// namespace context
 	ctx := namespaces.WithNamespace(context.Background(), "compiler")
-	// Pull (or ensure present)
-	image, pullErr := client.Pull(ctx, "docker.io/library/ubuntu:24.04", containerd.WithPullUnpack)
+	// ensure base image once
+	ensureStart := phaseStart
+	img, cached, pullErr := ensureBaseImage(ctx, "docker.io/library/ubuntu:24.04")
 	if pullErr != nil {
-		return "", "", fmt.Errorf("pull image: %w", pullErr)
+		return "", "", fmt.Errorf("ensure image: %w", pullErr)
 	}
-	fmt.Printf("[timing] pull image: %v\n", time.Since(phaseStart))
+	if cached {
+		fmt.Printf("[timing] ensure image (cached): %v\n", time.Since(ensureStart))
+	} else {
+		fmt.Printf("[timing] ensure image (pulled): %v\n", time.Since(ensureStart))
+	}
 	phaseStart = time.Now()
 
 	//working directory and lang dir
@@ -142,7 +185,7 @@ func execInKata(code string) (string, string, error) {
 	uniqueID := fmt.Sprintf("kata-sandbox-%d", time.Now().UnixNano())
 
 	specOpts := []oci.SpecOpts{
-		oci.WithImageConfig(image),
+		oci.WithImageConfig(img),
 		oci.WithProcessArgs("/bin/bash", "-lc", script),
 		oci.WithEnv([]string{
 			"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
@@ -168,7 +211,7 @@ func execInKata(code string) (string, string, error) {
 	container, err := client.NewContainer(
 		ctx,
 		uniqueID,
-		containerd.WithNewSnapshot(uniqueID+"-snap", image),
+		containerd.WithNewSnapshot(uniqueID+"-snap", img),
 		containerd.WithNewSpec(specOpts...),
 		containerd.WithRuntime("io.containerd.kata.v2", nil),
 	)
