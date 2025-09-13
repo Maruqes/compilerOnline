@@ -312,5 +312,3 @@ func execInKata(code string) (string, string, error) {
 		}
 	}
 }
-
-// timing wrapper removed

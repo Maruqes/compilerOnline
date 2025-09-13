@@ -45,52 +45,6 @@ Rules:
 
 See `https://github.com/kata-containers/kata-containers/tree/main/docs/install`
 
-### Run
-Needs Linux + containerd + Kata runtime installed & working.
-```bash
-./compiler-online
-```
-Open: `http://localhost:8080/`
-
-Admin login: visit `/adminLogin` (uses cookie `admintoken`). Protected: `/admin`, `/stats`, `/history`, `/logs`.
-
-### Runtime / performance notes
-- Runtime selection: `SANDBOX_RUNTIME=io.containerd.runc.v2` typically reduces `start task` latency vs Kata (trade: weaker isolation).
-- CPU quota: Raising or disabling (`SANDBOX_CPU_QUOTA_PERCENT=0`) can shorten compile time for CPU-heavy code.
-- Per-run script now prints `[compile-time-ms]` and `[run-time-ms]` plus stderr sections to help pinpoint slow phases.
-
-### Data
-- History: `data/containers.db` (old rows >90 days pruned daily)
-- Logs: `data/logs.sql` (structured JSON style + stack on errors)
-- History columns: `container_id, created_at, finished_at, execution_time_ms, ip, code_executed, output, error_message`
-
-
-### Typical problems
-| Symptom                           | Fix                                          |
-| --------------------------------- | -------------------------------------------- |
-| "environment file does not exist" | Add `.env`                                   |
-| "need root or sudo not found"     | Install sudo or run as root                  |
-| "missing lang directory"          | Ensure `lang/` exists with `compiler` inside |
-| Long first run                    | Pulling Ubuntu image                         |
-| JWT secret too short              | Use ≥16 chars                                |
-| Execution always stops at N sec   | Adjust `KATA_EXEC_TIMEOUT_SECONDS`           |
-
-### Hardening ideas (not done yet)
-- Rate limiting / quotas
-- Disable outbound network / shrink base image
-- Separate metrics endpoint (Prometheus)
-
-### Dev quick start (skip .env loading complaints by creating one)
-```bash
-cat > .env <<EOF
-PORT=8080
-ADMIN_USER=admin
-ADMIN_PASS=changeThisPassword_2025!
-LOG_LEVEL=debug
-EOF
-go run .
-```
-
 ### License
 See `LICENSE`.
 
