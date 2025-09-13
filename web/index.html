@@ -21,8 +21,7 @@
 </head>
 
 <body class="min-h-full bg-slate-950 text-slate-100 antialiased selection:bg-fuchsia-600/40 selection:text-fuchsia-100">
-    <!-- Custom cursor -->
-    <div class="custom-cursor" id="cursor"></div>
+    <!-- Removed custom cursor -->
 
     <div id="site-header"></div>
     <section class="hero-bg relative overflow-hidden min-h-screen">
@@ -397,63 +396,6 @@
                 initializeAll();
             }
         });
-
-        // Custom cursor functionality
-        const cursor = document.getElementById('cursor');
-        let mouseX = 0, mouseY = 0;
-        let cursorX = 0, cursorY = 0;
-
-        // Update cursor position with smooth animation
-        function updateCursor() {
-            const diffX = mouseX - cursorX;
-            const diffY = mouseY - cursorY;
-
-            cursorX += diffX * 0.1;
-            cursorY += diffY * 0.1;
-
-            cursor.style.transform = `translate(${cursorX - 10}px, ${cursorY - 10}px)`;
-            requestAnimationFrame(updateCursor);
-        }
-
-        // Track mouse movement
-        document.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-        });
-
-        // Hide cursor when leaving window
-        document.addEventListener('mouseleave', () => {
-            cursor.style.opacity = '0';
-        });
-
-        // Show cursor when entering window
-        document.addEventListener('mouseenter', () => {
-            cursor.style.opacity = '0.8';
-        });
-
-        // Add hover effect for interactive elements
-        const interactiveElements = document.querySelectorAll('a, button, .tab-btn, .hero-dot, [role="button"]');
-
-        interactiveElements.forEach(element => {
-            element.addEventListener('mouseenter', () => {
-                cursor.classList.add('hover');
-            });
-
-            element.addEventListener('mouseleave', () => {
-                cursor.classList.remove('hover');
-            });
-
-            element.addEventListener('mousedown', () => {
-                cursor.classList.add('click');
-            });
-
-            element.addEventListener('mouseup', () => {
-                cursor.classList.remove('click');
-            });
-        });
-
-        // Start cursor animation
-        updateCursor();
 
         injectLayout('home');
     </script> <!-- Scripts loaded with defer above -->

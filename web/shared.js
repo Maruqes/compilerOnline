@@ -19,20 +19,22 @@
 			return `<a href="${l.href}"${attrs} class="${common}${activeCls}">${l.label}</a>`;
 		}).join('\n');
 		return `
-		<header class="sticky top-0 z-50 backdrop-blur-sm bg-slate-950/90 border-b border-slate-800/30">
-			<div class="max-w-6xl mx-auto px-6 h-16">
-				<div class="flex items-center justify-between h-full">
-					<div class="flex items-center gap-3">
+			<header class="sticky top-0 z-50 backdrop-blur-sm bg-slate-950/90 border-b border-slate-800/30">
+				<div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between relative">
+					<a href="/" class="flex items-center gap-3 pr-4 -ml-2 pl-2 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-fuchsia-600 focus:ring-offset-2 focus:ring-offset-slate-900">
 						<img src="https://github.com/Maruqes.png" alt="Maruqes" class="w-8 h-8 rounded-md object-cover">
-						<div>
-							<span class="text-lg font-bold text-white">512lang</span>
-							<span class="ml-2 text-sm text-slate-400">by Maruqes</span>
-						</div>
-					</div>
-					<nav class="flex items-center gap-2 flex-wrap">${navLinks}</nav>
+						<span class="text-lg font-bold text-white tracking-tight">512lang</span>
+					</a>
+					<button id="navToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="siteNav" class="sm:hidden p-2 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/60 focus:outline-none focus:ring-2 focus:ring-fuchsia-600 focus:ring-offset-2 focus:ring-offset-slate-900 transition-colors">
+						<svg id="navToggleIcon" class="w-6 h-6" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M3 6h18M3 12h18M3 18h18" />
+						</svg>
+					</button>
+					<nav id="siteNav" class="hidden sm:flex items-center gap-2 flex-wrap absolute sm:static top-full left-0 right-0 sm:top-auto bg-slate-950/95 sm:bg-transparent border-b border-slate-800/60 sm:border-none px-4 py-4 sm:p-0 shadow-xl sm:shadow-none rounded-b-lg sm:rounded-none animate-none z-[60]">
+						${navLinks}
+					</nav>
 				</div>
-			</div>
-		</header>`;
+			</header>`;
 	}
 
 	function footerTemplate() {
@@ -64,5 +66,89 @@
 		if (f) f.innerHTML = footerTemplate();
 		const yearEl = document.getElementById('current-year');
 		if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+		// Mobile nav toggle (improved reliability)
+		const toggleBtn = document.getElementById('navToggle');
+		const nav = document.getElementById('siteNav');
+		if (toggleBtn && nav) {
+			let isOpen = false;
+			let lastFocused = null;
+			const icon = document.getElementById('navToggleIcon');
+
+			function setIcon(open) {
+				if (!icon) return;
+				icon.innerHTML = open
+					? '<path d="M6 18L18 6M6 6l12 12" />'
+					: '<path d="M3 6h18M3 12h18M3 18h18" />';
+			}
+
+			function lockScroll() { document.documentElement.classList.add('nav-open'); }
+			function unlockScroll() { document.documentElement.classList.remove('nav-open'); }
+
+			function openNav() {
+				if (isOpen) return;
+				lastFocused = document.activeElement;
+				isOpen = true;
+				nav.classList.remove('hidden');
+				nav.classList.add('is-open');
+				toggleBtn.setAttribute('aria-expanded', 'true');
+				setIcon(true);
+				lockScroll();
+				document.addEventListener('keydown', onKey);
+				document.addEventListener('click', onDocClick, { capture: true });
+				const firstLink = nav.querySelector('a');
+				if (firstLink) setTimeout(() => firstLink.focus(), 10);
+			}
+
+			function closeNav() {
+				if (!isOpen) return;
+				isOpen = false;
+				nav.classList.add('hidden');
+				nav.classList.remove('is-open');
+				toggleBtn.setAttribute('aria-expanded', 'false');
+				setIcon(false);
+				unlockScroll();
+				document.removeEventListener('keydown', onKey);
+				document.removeEventListener('click', onDocClick, { capture: true });
+				if (lastFocused && lastFocused.focus) setTimeout(() => lastFocused.focus(), 30);
+			}
+
+			function onKey(e) {
+				if (e.key === 'Escape') {
+					e.preventDefault();
+					closeNav();
+				} else if (e.key === 'Tab' && isOpen) {
+					// simple focus trap
+					const focusable = nav.querySelectorAll('a, button');
+					if (!focusable.length) return;
+					const first = focusable[0];
+					const last = focusable[focusable.length - 1];
+					if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+					else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+				}
+			}
+
+			function onDocClick(e) {
+				if (!nav.contains(e.target) && e.target !== toggleBtn) {
+					closeNav();
+				}
+			}
+
+			toggleBtn.addEventListener('click', () => (isOpen ? closeNav() : openNav()));
+
+			// Support touch swipe up to close (minimal)
+			let touchStartY = null;
+			nav.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
+			nav.addEventListener('touchmove', e => {
+				if (touchStartY !== null && e.touches[0].clientY - touchStartY > 60) {
+					closeNav();
+					touchStartY = null;
+				}
+			}, { passive: true });
+
+			window.addEventListener('resize', () => { if (window.innerWidth >= 640) closeNav(); });
+		}
+
+		// (Custom cursor removed)
 	};
 })();
