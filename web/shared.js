@@ -10,13 +10,14 @@
 			{ href: 'https://github.com/Maruqes/compiler/releases', label: 'Download', key: 'download', external: true, primary: true }
 		];
 		const navLinks = linkBase.map(l => {
-			const baseCls = 'px-4 py-2 text-sm font-medium rounded-md transition-colors';
+			const baseCls = 'px-4 py-2 text-sm font-medium rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-600/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900';
 			const common = l.primary
 				? `${baseCls} text-white bg-fuchsia-600 hover:bg-fuchsia-500`
 				: `${baseCls} text-slate-300 hover:text-white hover:bg-slate-800/50`;
-			const activeCls = (l.key === active) && !l.primary ? ' ring-1 ring-fuchsia-600/40 text-white' : '';
+			// Active: subtle tinted background + text color, no persistent ring
+			const activeCls = (l.key === active) && !l.primary ? ' bg-slate-800/60 text-white' : '';
 			const attrs = l.external ? ' target="_blank" rel="noopener noreferrer"' : '';
-			return `<a href="${l.href}"${attrs} class="${common}${activeCls}">${l.label}</a>`;
+			return `<a href="${l.href}"${attrs} class="${common}${activeCls}" data-nav-key="${l.key}">${l.label}</a>`;
 		}).join('\n');
 		return `
 			<header class="sticky top-0 z-50 backdrop-blur-sm bg-slate-950/90 border-b border-slate-800/30">
@@ -25,7 +26,7 @@
 						<img src="https://github.com/Maruqes.png" alt="Maruqes" class="w-8 h-8 rounded-md object-cover">
 						<span class="text-lg font-bold text-white tracking-tight">512lang</span>
 					</a>
-					<button id="navToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="siteNav" class="sm:hidden p-2 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/60 focus:outline-none focus:ring-2 focus:ring-fuchsia-600 focus:ring-offset-2 focus:ring-offset-slate-900 transition-colors">
+					<button id="navToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="siteNav" class="sm:hidden p-2 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/60 focus:outline-none focus:ring-2 focus:ring-fuchsia-600 focus:ring-offset-2 focus:ring-offset-slate-900 transition-colors relative z-[70]">
 						<svg id="navToggleIcon" class="w-6 h-6" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 							<path d="M3 6h18M3 12h18M3 18h18" />
 						</svg>
@@ -96,8 +97,7 @@
 				lockScroll();
 				document.addEventListener('keydown', onKey);
 				document.addEventListener('click', onDocClick, { capture: true });
-				const firstLink = nav.querySelector('a');
-				if (firstLink) setTimeout(() => firstLink.focus(), 10);
+				// Removed auto-focus of first link to avoid unwanted persistent outline on some mobile browsers.
 			}
 
 			function closeNav() {
@@ -134,7 +134,10 @@
 				}
 			}
 
-			toggleBtn.addEventListener('click', () => (isOpen ? closeNav() : openNav()));
+			function toggleNav() { isOpen ? closeNav() : openNav(); }
+			toggleBtn.addEventListener('click', toggleNav);
+			// Some mobile browsers dispatch touch events differently; ensure touch works even if click is swallowed
+			toggleBtn.addEventListener('touchend', (e) => { e.preventDefault(); toggleNav(); }, { passive: false });
 
 			// Support touch swipe up to close (minimal)
 			let touchStartY = null;

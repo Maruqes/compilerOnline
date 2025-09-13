@@ -1,7 +1,7 @@
 document.getElementById('current-year').textContent = new Date().getFullYear();
 
 // Default sample code (fallback)
-const defaultCode = `include("liblang/strings.lang")\n\nfunc main() {\n    print("Hello, World!\\\\n");\n    return;\n}\n`;
+const defaultCode = `include("liblang/strings.lang")\n\nfunc main() {\n    print("Hello, World!\\n");\n    return;\n}\n`;
 
 let activeExampleKey = null; // track which example loaded
 

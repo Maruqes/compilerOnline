@@ -507,3 +507,43 @@ h2 {
 }
 
 /* (Removed custom cursor styles) */
+
+/* Sidebar toggle for compiler page */
+/* Only hide sidebar content, not top bar */
+.order-1 #examplesSidebar.closed {
+	max-height: 0 !important;
+	padding: 0 !important;
+	border: none !important;
+	overflow: hidden !important;
+	transition: max-height 0.3s cubic-bezier(.4, 0, .2, 1);
+}
+
+@media (min-width: 1024px) {
+	.order-1 #examplesSidebar.closed {
+		max-height: none !important;
+		padding: initial !important;
+		border: initial !important;
+		overflow: visible !important;
+	}
+}
+
+/* Mobile horizontal tab bar */
+#exampleTabs {
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	/* Firefox */
+}
+
+#exampleTabs::-webkit-scrollbar {
+	display: none;
+}
+
+#exampleTabs .tab-btn {
+	flex: 0 0 auto;
+}
+
+@media (min-width: 640px) {
+	#exampleTabs {
+		overflow: visible;
+	}
+}

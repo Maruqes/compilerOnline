@@ -26,9 +26,9 @@
 		<!-- 3-column layout on large screens: examples | editor | output -->
 		<div class="flex flex-col gap-6 lg:grid lg:grid-cols-[12rem_minmax(0,1fr)_16rem]" id="layoutGrid">
 			<!-- Examples Sidebar (Left) -->
-			<aside id="examplesSidebar"
-				class="bg-slate-900/60 border border-slate-800/60 rounded-lg flex flex-col overflow-hidden backdrop-blur-sm order-1">
-				<div class="px-4 py-3 border-b border-slate-700/60 flex items-center justify-between">
+			<div class="relative order-1">
+				<div
+					class="px-4 py-3 border-b border-slate-700/60 flex items-center justify-between bg-slate-900/60 rounded-t-lg">
 					<h2 class="text-sm font-semibold tracking-wide text-slate-200">Examples</h2>
 					<button id="collapseExamples" class="lg:hidden text-slate-400 hover:text-slate-200"
 						aria-label="Toggle examples">
@@ -38,16 +38,20 @@
 						</svg>
 					</button>
 				</div>
-				<div class="p-3 border-b border-slate-800/40">
-					<input id="exampleSearch" type="text" placeholder="Search…"
-						class="w-full text-xs px-2.5 py-1.5 rounded-md bg-slate-800/70 border border-slate-700/70 focus:outline-none focus:ring-1 focus:ring-fuchsia-600 placeholder-slate-500" />
-				</div>
-				<ul id="examplesList" class="flex-1 overflow-auto py-2 text-xs divide-y divide-slate-800/40"></ul>
-				<div
-					class="p-3 text-[10px] leading-relaxed text-slate-500 bg-slate-950/40 border-t border-slate-800/60">
-					Click an example to load it into the editor. Modifying the code won’t change the original sample.
-				</div>
-			</aside>
+				<aside id="examplesSidebar"
+					class="bg-slate-900/60 border border-slate-800/60 rounded-b-lg flex flex-col overflow-hidden backdrop-blur-sm">
+					<div class="p-3 border-b border-slate-800/40">
+						<input id="exampleSearch" type="text" placeholder="Search…"
+							class="w-full text-xs px-2.5 py-1.5 rounded-md bg-slate-800/70 border border-slate-700/70 focus:outline-none focus:ring-1 focus:ring-fuchsia-600 placeholder-slate-500" />
+					</div>
+					<ul id="examplesList" class="flex-1 overflow-auto py-2 text-xs divide-y divide-slate-800/40"></ul>
+					<div
+						class="p-3 text-[10px] leading-relaxed text-slate-500 bg-slate-950/40 border-t border-slate-800/60">
+						Click an example to load it into the editor. Modifying the code won’t change the original
+						sample.
+					</div>
+				</aside>
+			</div>
 
 			<!-- Editor (Center) -->
 			<section id="editorPanel"
@@ -94,16 +98,25 @@
 		document.addEventListener('DOMContentLoaded', () => {
 			const search = document.getElementById('exampleSearch');
 			const list = document.getElementById('examplesList');
-			if (!search || !list) return;
-
-			search.addEventListener('input', () => {
-				const q = search.value.toLowerCase();
-				const items = list.querySelectorAll('li');
-				items.forEach(li => {
-					const txt = li.getAttribute('data-title') || '';
-					li.style.display = txt.includes(q) ? '' : 'none';
+			if (search && list) {
+				search.addEventListener('input', () => {
+					const q = search.value.toLowerCase();
+					const items = list.querySelectorAll('li');
+					items.forEach(li => {
+						const txt = li.getAttribute('data-title') || '';
+						li.style.display = txt.includes(q) ? '' : 'none';
+					});
 				});
-			});
+			}
+
+			// Toggle sidebar on mobile
+			const collapseBtn = document.getElementById('collapseExamples');
+			const sidebar = document.getElementById('examplesSidebar');
+			if (collapseBtn && sidebar) {
+				collapseBtn.addEventListener('click', () => {
+					sidebar.classList.toggle('closed');
+				});
+			}
 		});
 	</script>
 </body>
