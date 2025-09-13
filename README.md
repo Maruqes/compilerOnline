@@ -40,8 +40,21 @@ Rules:
 - JWT secret (or admin pass) must be at least 16 chars.
 - If `.env` is missing the program exits.
 
-### Build
+### 
 ```bash
+# Update
+sudo apt update && sudo apt upgrade -y
+
+# Install required packages
+sudo apt install -y curl gnupg2 software-properties-common apt-transport-https ca-certificates
+
+# Install containerd
+sudo apt install -y containerd
+
+# Enable and start
+sudo systemctl enable containerd
+sudo systemctl start containerd
+
 
 ```
 

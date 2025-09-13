@@ -209,7 +209,7 @@ function formatContainerForDisplay(container) {
 	const statusColor = container.error_message ? 'bg-red-500/20 text-red-300 border-red-500/30' : 'bg-green-500/20 text-green-300 border-green-500/30';
 	const statusText = container.error_message ? 'FAILED' : 'SUCCESS';
 	html += `<div class=\"flex items-center gap-3 pb-3 border-b border-slate-700\"><span class=\"px-2 py-1 rounded text-xs font-semibold border ${statusColor}\">${statusText}</span><span class=\"text-slate-400 text-sm font-mono\">${container.container_id || ''}</span></div>`;
-	const fieldOrder = ['container_id', 'created_at', 'finished_at', 'execution_time', 'error_message', 'code_executed', 'output'];
+	const fieldOrder = ['container_id', 'created_at', 'finished_at', 'execution_time', 'error_message', 'timings', 'code_executed', 'output'];
 	fieldOrder.forEach(k => { if (container.hasOwnProperty(k)) { const v = container[k]; html += `<div class=\"flex flex-col gap-1\"><span class=\"text-fuchsia-400 font-medium\">${k}:</span><div class=\"pl-4\">${formatValue(k, v)}</div></div>`; } });
 	Object.entries(container).forEach(([k, v]) => { if (!fieldOrder.includes(k)) { html += `<div class=\"flex flex-col gap-1\"><span class=\"text-fuchsia-400 font-medium\">${k}:</span><div class=\"pl-4\">${formatValue(k, v)}</div></div>`; } });
 	html += '</div>'; return html;

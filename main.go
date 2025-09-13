@@ -34,14 +34,15 @@ type ContainerHistory struct {
 
 // ContainerRecord representa um registro completo de um container
 type ContainerRecord struct {
-	ContainerID   string        `json:"container_id"`
-	CreatedAt     time.Time     `json:"created_at"`
-	FinishedAt    time.Time     `json:"finished_at"`
-	ExecutionTime time.Duration `json:"execution_time"`
-	IP            string        `json:"ip,omitempty"`
-	CodeExecuted  string        `json:"code_executed"`
-	Output        string        `json:"output"`
-	ErrorMessage  string        `json:"error_message"`
+	ContainerID   string           `json:"container_id"`
+	CreatedAt     time.Time        `json:"created_at"`
+	FinishedAt    time.Time        `json:"finished_at"`
+	ExecutionTime time.Duration    `json:"execution_time"`
+	IP            string           `json:"ip,omitempty"`
+	Timings       map[string]int64 `json:"timings,omitempty"` // duration ms per phase
+	CodeExecuted  string           `json:"code_executed"`
+	Output        string           `json:"output"`
+	ErrorMessage  string           `json:"error_message"`
 }
 
 // ContainerStats simples (sem métricas de recursos)
@@ -53,27 +54,46 @@ type ContainerStats struct {
 }
 
 func compileHandler(w http.ResponseWriter, r *http.Request) {
+	startOverall := time.Now()
 	code := r.FormValue("code")
 	if code == "" {
 		logger.Warn("code not provided")
 		http.Error(w, "code not provided", http.StatusBadRequest)
 		return
 	}
-
+	afterValidation := time.Now()
 	clientIP := extractClientIP(r)
+	afterIP := time.Now()
 
 	// Executar e capturar dados para histórico
-	result, containerRecord, err := execInKataWithHistory(code)
+	result, containerRecord, execTimings, err := execInKataWithHistory(code)
+	afterExec := time.Now()
 	if err != nil {
 		logger.Error("code execution failed", zap.Error(err))
 		// Persist even on error
 		if containerRecord != nil {
 			containerRecord.IP = clientIP
+			mergeTimingsIntoRecord(containerRecord, map[string]time.Duration{
+				"validate": afterValidation.Sub(startOverall),
+				"ip":       afterIP.Sub(afterValidation),
+				"exec":     afterExec.Sub(afterIP),
+			})
+			if execTimings != nil {
+				for k, v := range execTimings {
+					containerRecord.Timings[k] = v
+				}
+			}
 			containerRecord.ErrorMessage = err.Error()
 			if dbErr := saveContainerRecordDB(containerRecord); dbErr != nil {
 				logger.Error("failed to persist error record", zap.Error(dbErr))
 			}
 		}
+		logger.Info("timings /compile (error path)",
+			zap.Duration("validate_ms", afterValidation.Sub(startOverall)),
+			zap.Duration("ip_ms", afterIP.Sub(afterValidation)),
+			zap.Duration("exec_ms", afterExec.Sub(afterIP)),
+			zap.Duration("total_ms", time.Since(startOverall)),
+		)
 		if err == ErrLimitChar5k {
 			http.Error(w, "Error: code exceeds 5000 character limit\n"+result, http.StatusBadRequest)
 		} else {
@@ -83,12 +103,31 @@ func compileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Persist success
+	afterPersist := time.Now()
 	if containerRecord != nil {
 		containerRecord.IP = clientIP
+		mergeTimingsIntoRecord(containerRecord, map[string]time.Duration{
+			"validate": afterValidation.Sub(startOverall),
+			"ip":       afterIP.Sub(afterValidation),
+			"exec":     afterExec.Sub(afterIP),
+			"persist":  afterPersist.Sub(afterExec),
+		})
+		if execTimings != nil {
+			for k, v := range execTimings {
+				containerRecord.Timings[k] = v
+			}
+		}
 		if dbErr := saveContainerRecordDB(containerRecord); dbErr != nil {
 			logger.Error("failed to persist record", zap.Error(dbErr))
 		}
 	}
+	logger.Info("timings /compile (success)",
+		zap.Duration("validate_ms", afterValidation.Sub(startOverall)),
+		zap.Duration("ip_ms", afterIP.Sub(afterValidation)),
+		zap.Duration("exec_ms", afterExec.Sub(afterIP)),
+		zap.Duration("persist_ms", afterPersist.Sub(afterExec)),
+		zap.Duration("total_ms", time.Since(startOverall)),
+	)
 
 	logger.Info("code executed successfully")
 	w.Write([]byte(result))
@@ -119,7 +158,7 @@ func extractClientIP(r *http.Request) string {
 }
 
 // execInKataWithHistory executa código e retorna dados completos para o histórico
-func execInKataWithHistory(code string) (string, *ContainerRecord, error) {
+func execInKataWithHistory(code string) (string, *ContainerRecord, map[string]int64, error) {
 	startTime := time.Now()
 
 	// Criar o registro base
@@ -130,7 +169,7 @@ func execInKataWithHistory(code string) (string, *ContainerRecord, error) {
 	}
 
 	// Executar o código original
-	result, containerID, err := execInKata(code)
+	result, containerID, execPhases, err := execInKataWithTimings(code)
 	endTime := time.Now()
 
 	// Preencher dados finais
@@ -149,7 +188,17 @@ func execInKataWithHistory(code string) (string, *ContainerRecord, error) {
 		record.ContainerID = fmt.Sprintf("kata-exec-%d", startTime.UnixNano())
 	}
 
-	return result, record, err
+	return result, record, execPhases, err
+}
+
+// mergeTimingsIntoRecord adds durations (as ms) into record.Timings map.
+func mergeTimingsIntoRecord(r *ContainerRecord, phases map[string]time.Duration) {
+	if r.Timings == nil {
+		r.Timings = make(map[string]int64, len(phases))
+	}
+	for k, v := range phases {
+		r.Timings[k] = v.Milliseconds()
+	}
 }
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {
