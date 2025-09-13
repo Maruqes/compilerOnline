@@ -24,8 +24,6 @@ var adminUser string
 var adminPass string
 var kataExecTimeout time.Duration
 
-// (history JSON removed; using SQLite DB)
-
 // ContainerHistory armazena o histórico completo de todos os containers
 type ContainerHistory struct {
 	Containers []ContainerRecord `json:"containers"`
@@ -296,7 +294,6 @@ func getIndividualContainerStats(ctx context.Context, container containerd.Conta
 // (deprecated) parseMetrics removed; metrics now decoded directly from containerd task.Metrics
 
 func main() {
-
 	//ask for sudo if not root
 	if os.Geteuid() != 0 {
 		sudoPath, lookErr := exec.LookPath("sudo")
@@ -343,6 +340,18 @@ func main() {
 	adminPass = os.Getenv("ADMIN_PASS")
 	if adminPass == "" {
 		logger.Fatal("missing ADMIN_PASS env variable (password for protected endpoints)")
+	}
+
+	// Base image preload (pull once at startup so first user request is fast)
+	baseRef := os.Getenv("SANDBOX_BASE_IMAGE")
+	if baseRef == "" {
+		baseRef = "docker.io/library/busybox:latest"
+	}
+	ctx := namespaces.WithNamespace(context.Background(), "compiler")
+	if _, cached, err := ensureBaseImage(ctx, baseRef); err != nil {
+		logger.Fatal("preload base image", zap.String("image", baseRef), zap.Error(err))
+	} else {
+		logger.Info("base image ready", zap.String("image", baseRef), zap.Bool("cached", cached))
 	}
 
 	// Kata exec timeout (seconds); default 10 if unset/invalid/<=0

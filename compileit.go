@@ -125,7 +125,7 @@ func buildExecutionScript(code string) (string, error) {
 		delim = fmt.Sprintf("LANGCODE_EOF_%x_%d", randBytes, time.Now().UnixNano())
 	}
 	script := fmt.Sprintf(`set -euo pipefail
-TMPDIR=$(mktemp -d /tmp/sandbox-XXXX)
+TMPDIR=$(mktemp -d /tmp/sandbox-XXXXXX)
 cp -r /lang/compiler $TMPDIR/
 cp -r /lang/liblang $TMPDIR/ 2>/dev/null || true
 cp -r /lang/*.lang $TMPDIR/ 2>/dev/null || true
@@ -180,9 +180,13 @@ func execInKata(code string) (string, string, error) {
 
 	// namespace context
 	ctx := namespaces.WithNamespace(context.Background(), "compiler")
-	// ensure base image once
+	// ensure base image once (configurable via SANDBOX_BASE_IMAGE, fallback docker.io/library/busybox:latest)
 	ensureStart := phaseStart
-	img, cached, pullErr := ensureBaseImage(ctx, "docker.io/library/ubuntu:24.04")
+	baseRef := os.Getenv("SANDBOX_BASE_IMAGE")
+	if baseRef == "" {
+		baseRef = "docker.io/library/busybox:latest"
+	}
+	img, cached, pullErr := ensureBaseImage(ctx, baseRef)
 	if pullErr != nil {
 		return "", "", fmt.Errorf("ensure image: %w", pullErr)
 	}
@@ -215,7 +219,7 @@ func execInKata(code string) (string, string, error) {
 
 	specOpts := []oci.SpecOpts{
 		oci.WithImageConfig(img),
-		oci.WithProcessArgs("/bin/bash", "-lc", script),
+		oci.WithProcessArgs("/bin/sh", "-c", script),
 		oci.WithEnv([]string{
 			"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
 			"HOME=/home/sandbox",
