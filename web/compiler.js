@@ -647,7 +647,7 @@ func main(){
 
     print("Attempt connect...\\n");
     dq r = sys_connect(sock, addr, 16);
-    if r < 0 { print("connect() failed, this compiles in a total isolation environment, does not work in an online compiler\\n"); return; }
+    if r < 0 { print("connect() failed, this works in a normal environment, does not work in an online compiler\\n"); return; }
     print("connected\\n");
 
     sys_send(sock, "Write your message:\\n", 20, MSG_NOSIGNAL);
