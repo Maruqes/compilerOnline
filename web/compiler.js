@@ -813,22 +813,85 @@ amdRequire(['vs/editor/editor.main'], function () {
 		wordWrap: 'on',
 	});
 
+	// Keep track of editor font size so zoom buttons can change it
+	window.editorFontSize = 14;
+
+	// Helper to set font size with bounds
+	function setEditorFontSize(size) {
+		const clamped = Math.max(10, Math.min(28, Math.round(size)));
+		window.editorFontSize = clamped;
+		window.editor.updateOptions({ fontSize: clamped });
+	}
+
+	// Expose zoom functions for UI
+	window.zoomEditorIn = function () { setEditorFontSize(window.editorFontSize + 1); };
+	window.zoomEditorOut = function () { setEditorFontSize(window.editorFontSize - 1); };
+
+	// Wire up buttons if present
+	const zoomInBtn = document.getElementById('zoomInBtn');
+	const zoomOutBtn = document.getElementById('zoomOutBtn');
+	if (zoomInBtn) zoomInBtn.addEventListener('click', () => { window.zoomEditorIn(); zoomInBtn.blur(); });
+	if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => { window.zoomEditorOut(); zoomOutBtn.blur(); });
+
 	// After editor ready populate examples sidebar
 	initializeExampleSidebar();
 });
 
 function initializeExampleSidebar() {
-	const list = document.getElementById('examplesList');
-	if (!list) return;
-	list.innerHTML = '';
-	compilerPageExamples.forEach(ex => {
-		const li = document.createElement('li');
-		li.className = 'group px-3 py-2 cursor-pointer hover:bg-slate-800/60 transition-colors flex flex-col gap-0.5';
-		li.setAttribute('data-title', ex.title.toLowerCase());
-		li.innerHTML = `<div class="flex items-center justify-between"><span class="font-medium text-slate-200">${ex.title}</span><button class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800/70 border border-slate-700/60 text-slate-400 group-hover:border-fuchsia-600/40 group-hover:text-fuchsia-300 group-hover:bg-fuchsia-600/10">Load</button></div><div class="text-[10px] text-slate-500 truncate font-mono">${escapeSnippet(ex.code)}</div>`;
-		li.addEventListener('click', () => loadExample(ex.key));
-		list.appendChild(li);
-	});
+	const desktopList = document.getElementById('examplesList');
+	const mobileList = document.getElementById('examplesListMobile');
+
+	function renderLists(filter = '') {
+		const f = (filter || '').toLowerCase();
+		if (desktopList) desktopList.innerHTML = '';
+		if (mobileList) mobileList.innerHTML = '';
+		compilerPageExamples
+			.filter(ex => ex.title.toLowerCase().includes(f) || (ex.key || '').toLowerCase().includes(f))
+			.forEach(ex => {
+				const snippet = escapeSnippet(ex.code || '');
+
+				if (desktopList) {
+					const li = document.createElement('li');
+					li.className = 'group px-3 py-2 cursor-pointer hover:bg-slate-800/60 transition-colors flex flex-col gap-0.5';
+					li.setAttribute('data-title', ex.title.toLowerCase());
+					li.innerHTML = `<div class="flex items-center justify-between"><span class="font-medium text-slate-200">${ex.title}</span><button class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800/70 border border-slate-700/60 text-slate-400 group-hover:border-fuchsia-600/40 group-hover:text-fuchsia-300 group-hover:bg-fuchsia-600/10">Load</button></div><div class="text-[10px] text-slate-500 truncate font-mono">${snippet}</div>`;
+					li.querySelector('button')?.addEventListener('click', (ev) => { ev.stopPropagation(); loadExample(ex.key); });
+					li.addEventListener('click', () => loadExample(ex.key));
+					desktopList.appendChild(li);
+				}
+
+				if (mobileList) {
+					const li = document.createElement('li');
+					li.className = 'px-3 py-2 cursor-pointer hover:bg-slate-800/60 flex items-center justify-between';
+					li.innerHTML = `<span class="font-medium text-slate-200">${ex.title}</span><button class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800/70 border border-slate-700/60 text-slate-400">Load</button>`;
+					li.querySelector('button')?.addEventListener('click', (ev) => { ev.stopPropagation(); loadExample(ex.key); });
+					li.addEventListener('click', () => loadExample(ex.key));
+					mobileList.appendChild(li);
+				}
+			});
+	}
+
+	// Initial render
+	renderLists();
+
+	// Wire up desktop search input (filters examples as user types)
+	const searchInput = document.getElementById('exampleSearch');
+	if (searchInput) {
+		// Filter on input
+		searchInput.addEventListener('input', (ev) => {
+			renderLists(ev.target.value || '');
+		});
+
+		// Allow Escape to clear the search quickly
+		searchInput.addEventListener('keydown', (ev) => {
+			if (ev.key === 'Escape') {
+				ev.preventDefault();
+				searchInput.value = '';
+				renderLists('');
+				searchInput.blur();
+			}
+		});
+	}
 }
 
 function escapeSnippet(code) {
