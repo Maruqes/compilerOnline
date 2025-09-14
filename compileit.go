@@ -81,7 +81,7 @@ func sandboxSpecOpt() oci.SpecOpts {
 		} else if appConfig != nil && appConfig.SandboxCPUQuotaPercent == 0 {
 			cpuQuota = nil // explicit unlimited
 		} else {
-			q := int64(10000) // default ~10%
+			q := int64(*cpuPeriod) / 10
 			cpuQuota = &q
 		}
 		s.Linux.Resources = &specs.LinuxResources{
@@ -163,7 +163,7 @@ func execInKata(code string) (string, string, error) {
 		if runErr := cmd.Run(); runErr != nil {
 			return "", "", fmt.Errorf("sudo elevation failed: %w", runErr)
 		}
-		return "", "", nil
+		os.Exit(0)
 	}
 
 	// connect (or reuse) containerd client
@@ -228,10 +228,28 @@ func execInKata(code string) (string, string, error) {
 			{Destination: "/tmp", Type: "tmpfs", Source: "tmpfs", Options: []string{"rw", "nosuid", "nodev", "mode=1777", "size=64m"}},
 			{Type: "bind", Source: langDir, Destination: "/lang", Options: []string{"rbind", "ro"}},
 		}),
+		oci.WithLinuxNamespace(specs.LinuxNamespace{Type: specs.NetworkNamespace, Path: ""}),
 		oci.WithNoNewPrivileges,
 		oci.WithCapabilities([]string{}),
-		oci.WithMaskedPaths([]string{"/proc/kcore", "/proc/timer_list", "/proc/sched_debug", "/proc/scsi", "/sys/firmware", "/sys/fs/selinux"}),
-		oci.WithReadonlyPaths([]string{"/proc/asound", "/proc/bus", "/proc/fs", "/proc/irq", "/proc/sys", "/proc/sysrq-trigger"}),
+		oci.WithMaskedPaths([]string{"/proc/kcore",
+			"/proc/timer_list",
+			"/proc/sched_debug",
+			"/proc/scsi",
+			"/sys/firmware",
+			"/sys/fs/selinux",
+			"/proc/net",          // hides network sockets and info
+			"/proc/sys/net",      // hides sysctl network controls
+			"/sys/class/net",     // hides network device entries (e.g. lo)
+			"/run/systemd/netif", // optional: hide other network state
+		}),
+		oci.WithReadonlyPaths([]string{"/proc/asound",
+			"/proc/bus",
+			"/proc/fs",
+			"/proc/irq",
+			"/proc/sys",
+			"/proc/sysrq-trigger",
+			"/etc/resolv.conf", // prevent modifying DNS (if you accidentally mount it)
+		}),
 		sandboxSpecOpt(),
 		seccomp.WithDefaultProfile(),
 		oci.WithRootFSReadonly(),
