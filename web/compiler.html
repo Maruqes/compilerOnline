@@ -85,8 +85,10 @@
 					<span class="text-sm text-slate-300 font-mono">output</span>
 					<div class="text-xs text-slate-500" id="status">idle</div>
 				</div>
-				<div class="p-4 overflow-auto flex-1">
-					<pre id="output" class="text-sm text-slate-300 font-mono leading-relaxed whitespace-pre-wrap"></pre>
+				<div class="p-4 flex-1">
+					<!-- Make the output pane independently scrollable -->
+					<pre id="output"
+						class="text-sm text-slate-300 font-mono leading-relaxed whitespace-pre-wrap overflow-auto max-h-[60vh]"></pre>
 				</div>
 			</section>
 		</div>
@@ -143,9 +145,15 @@
 			tabCode.addEventListener('click', () => showTab('code'));
 			tabOutput.addEventListener('click', () => showTab('output'));
 
-			// Switch to output after compile
+			// Switch to output after compile only on small screens
 			runBtn.addEventListener('click', () => {
-				showTab('output');
+				if (window.innerWidth < 1024) { // matches Tailwind's lg breakpoint
+					showTab('output');
+				} else {
+					// On desktop keep both editor and output visible; scroll output into view
+					const out = document.getElementById('output');
+					if (out) out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+				}
 			});
 
 			// Examples are populated from `compiler.js` (compilerPageExamples)
