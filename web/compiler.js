@@ -626,8 +626,57 @@ func main(){
 	print("\\n");
 	print(&structName.domainname);
 	return;
-}` }
-	,
+}` },
+	{
+		key: 'floats', title: 'Floats', code: `include("liblang/floats.lang")
+include("liblang/strings.lang")
+
+func main(dq argc){
+
+    // Basic values
+    dq v1 = 10.5;
+    dq v2 = 5.5;
+
+    // Test arithmetic
+    dq add_res = floatAdd(v1, v2);
+    dq sub_res = floatSub(v1, v2);
+    dq mul_res = floatMul(v1, v2);
+    dq div_res = floatDiv(v1, v2);
+
+    if floatUcomisd(10.0, 10.0){
+        print("10.0 == 10.0\\n");
+    }
+
+    if floatComisd(10.0, 10.0){
+        print("10.0 == 10.0\\n");
+    }
+
+    // Test bitwise ops
+    dq xor_res = floatXorpd(v1, v2);
+    dq and_res = floatAndpd(v1, v2);
+
+    // Test sqrt
+    dq sqrt_res = floatSqrt(v1);
+
+    // Test conversions
+    dq to_int = cvttsd2si(v1);
+    dq to_double = cvtsi2sd(to_int);
+
+    // Print results
+    printHex(v1);
+    printHex(v2);
+    printHex(add_res);
+    printHex(sub_res);
+    printHex(mul_res);
+    printHex(div_res);
+    printHex(xor_res);
+    printHex(and_res);
+    printHex(sqrt_res);
+    printHex(to_int);
+    printHex(to_double);
+
+    return;
+}` },
 	{
 		key: 'tcp-connect', title: 'TCP Connect', code: `include("liblang/min.lang")
 include("liblang/mem.lang")

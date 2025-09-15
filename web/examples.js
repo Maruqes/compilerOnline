@@ -71,6 +71,8 @@ const codeExamples = {
 	a--;
 	a+=2;
 	a-=2;
+	a*=2;
+	a/=2;
 	// ...
 
 	printHex(a);
@@ -138,6 +140,63 @@ const codeExamples = {
 				" (&&  ||)",
 				" (== != < <= > >=)",
 				" (<< >>)"
+			]
+		}
+	},
+	floats: {
+		title: "Floats",
+		code: `
+func main(dq argc){
+
+    // Basic values
+    dq v1 = 10.5;
+    dq v2 = 5.5;
+
+    // Test arithmetic
+    dq add_res = floatAdd(v1, v2);
+    dq sub_res = floatSub(v1, v2);
+    dq mul_res = floatMul(v1, v2);
+    dq div_res = floatDiv(v1, v2);
+
+    if floatUcomisd(10.0, 10.0){
+        print("10.0 == 10.0\\n");
+    }
+
+    if floatComisd(10.0, 10.0){
+        print("10.0 == 10.0\\n");
+    }
+
+    // Test bitwise ops
+    dq xor_res = floatXorpd(v1, v2);
+    dq and_res = floatAndpd(v1, v2);
+
+    // Test sqrt
+    dq sqrt_res = floatSqrt(v1);
+
+    // Test conversions
+    dq to_int = cvttsd2si(v1);
+    dq to_double = cvtsi2sd(to_int);
+
+	return;
+}
+`,
+		description: [
+			"Examples of floats, they are totally separate from other types, ther are not even a type cast, you must use special functions. Only double precision (64-bit) is supported so dq is used to hold float values.",
+		],
+		features: {
+			title: "Float Functions:",
+			items: [
+				"floatAdd",
+				"floatSub",
+				"floatMul",
+				"floatDiv",
+				"floatUcomisd",
+				"floatComisd",
+				"floatXorpd",
+				"floatAndpd",
+				"floatSqrt",
+				"cvtsi2sd",
+				"cvttsd2si"
 			]
 		}
 	},

@@ -122,6 +122,11 @@
                     </button>
                     <button
                         class="tab-btn flex-shrink-0 min-w-[10rem] md:min-w-[8rem] whitespace-nowrap px-6 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 snap-start"
+                        data-tab="floats">
+                        Floats
+                    </button>
+                    <button
+                        class="tab-btn flex-shrink-0 min-w-[10rem] md:min-w-[8rem] whitespace-nowrap px-6 py-3 text-sm font-medium rounded-lg transition-all border-b-2 border-transparent hover:border-slate-600 text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 snap-start"
                         data-tab="structs">
                         Structs
                     </button>
@@ -174,6 +179,10 @@
             </div>
 
             <div class="tab-content hidden" id="arithmetics">
+                <!-- Content will be loaded by examples.js -->
+            </div>
+
+            <div class="tab-content hidden" id="floats">
                 <!-- Content will be loaded by examples.js -->
             </div>
 
@@ -475,9 +484,6 @@
             const tabs = scroller.querySelectorAll('.tab-btn');
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {
-                    // scroll clicked tab into center view on small screens
-                    tab.scrollIntoView({ behavior: 'smooth', inline: 'center' });
-
                     // existing tab click logic already attached in DOMContentLoaded; ensure content toggles
                     const targetTab = tab.getAttribute('data-tab');
                     const tabContents = document.querySelectorAll('.tab-content');

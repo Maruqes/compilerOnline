@@ -1,0 +1,127 @@
+global {
+
+}
+//sum
+func floatAdd(dq a, dq b) {
+    loadReg(rax, a);
+    loadReg(rbx, b);
+    asm(movq_x_r, xmm0, rax);
+    asm(movq_x_r, xmm1, rbx);
+
+    asm(addsd_x_x, xmm0, xmm1);
+    asm(movq_r_x, rax, xmm0);
+	return;
+}
+//sub
+func floatSub(dq a, dq b) {
+    loadReg(rax, a);
+    loadReg(rbx, b);
+    asm(movq_x_r, xmm0, rax);
+    asm(movq_x_r, xmm1, rbx);
+
+    asm(subsd_x_x, xmm0, xmm1);
+    asm(movq_r_x, rax, xmm0);
+	return;
+}
+//mul
+func floatMul(dq a, dq b) {
+    loadReg(rax, a);
+    loadReg(rbx, b);
+    asm(movq_x_r, xmm0, rax);
+    asm(movq_x_r, xmm1, rbx);
+
+    asm(mulsd_x_x, xmm0, xmm1);
+    asm(movq_r_x, rax, xmm0);
+	return;
+}
+//div
+func floatDiv(dq a, dq b) {
+    loadReg(rax, a);
+    loadReg(rbx, b);
+    asm(movq_x_r, xmm0, rax);
+    asm(movq_x_r, xmm1, rbx);
+
+    asm(divsd_x_x, xmm0, xmm1);
+    asm(movq_r_x, rax, xmm0);
+    return;
+}
+//compara unordered (floatUcomisd): compara dois valores de ponto flutuante, mas trata NaN como unordered (não igual a nada).
+func floatUcomisd(dq a, dq b) {
+    loadReg(rax, a);
+    loadReg(rbx, b);
+    asm(movq_x_r, xmm0, rax);
+    asm(movq_x_r, xmm1, rbx);
+
+    asm(ucomisd_x_x, xmm0, xmm1);
+    asm(movq_r_x, rax, xmm0);
+
+    asm(mov64_r_i, rax, 0); // Clear rax before setting the flag
+    asm(sete, al);
+    return;
+}
+
+//compara ordered (floatComisd): compara dois valores de ponto flutuante, mas se algum for NaN, o resultado é sempre unordered.
+func floatComisd(dq a, dq b) {
+    loadReg(rax, a);
+    loadReg(rbx, b);
+    asm(movq_x_r, xmm0, rax);
+    asm(movq_x_r, xmm1, rbx);
+
+    asm(comisd_x_x, xmm0, xmm1);
+    asm(movq_r_x, rax, xmm0);
+
+    asm(mov64_r_i, rax, 0); // Clear rax before setting the flag
+    asm(sete, al);
+
+    return;
+}
+
+//xor
+func floatXorpd(dq a, dq b) {
+    loadReg(rax, a);
+    loadReg(rbx, b);
+    asm(movq_x_r, xmm0, rax);
+    asm(movq_x_r, xmm1, rbx);
+
+    asm(xorpd_x_x, xmm0, xmm1);
+    asm(movq_r_x, rax, xmm0);
+	return;
+}
+
+//and
+func floatAndpd(dq a, dq b) {
+    loadReg(rax, a);
+    loadReg(rbx, b);
+    asm(movq_x_r, xmm0, rax);
+    asm(movq_x_r, xmm1, rbx);
+
+    asm(andpd_x_x, xmm0, xmm1);
+    asm(movq_r_x, rax, xmm0);
+    return;
+}
+
+//sqrt
+func floatSqrt(dq a) {
+    loadReg(rax, a);
+    asm(movq_x_r, xmm0, rax);
+
+    asm(sqrtsd_x_x, xmm0, xmm0);
+    asm(movq_r_x, rax, xmm0);
+	return;
+}
+
+// converts signed integer to double
+func cvtsi2sd(dq i) {
+    loadReg(rax, i);
+    asm(cvtsi2sd_x_r, xmm0, rax);
+    asm(movq_r_x, rax, xmm0);
+	return;
+}
+
+// converts double to signed integer (truncating)
+func cvttsd2si(dq f) {
+	loadReg(rax, f);
+	asm(movq_x_r, xmm0, rax);
+	asm(cvttsd2si_r_x, rax, xmm0);
+	return;
+}
