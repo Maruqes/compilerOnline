@@ -1,7 +1,7 @@
 //depends on liblang/mem.lang
 //depends on liblang/min.lang
 
-func sys_clone(dq flags, ptr child_stack, ptr ptid, ptr ctid, ptr newtls){
+func sys_clone(dq flags, ptr child_stack, ptr ptid, ptr ctid, ptr newtls, ptr start_routine, ptr pStack){
 	dq ret;
 	asm(mov64_r_i, rax, 56); // syscall number for clone
 	loadReg(rdi, flags);
@@ -11,6 +11,14 @@ func sys_clone(dq flags, ptr child_stack, ptr ptid, ptr ctid, ptr newtls){
 	loadReg(r8, newtls);
 	asm(syscall);
 	loadVar(ret, rax);
+
+	if ret == 0 {
+		loadReg(rbx, start_routine);
+		loadReg(rsp, pStack);
+		asm(call_raw_address, rbx);
+		exit(0);
+	}
+
 	return ret;
 }
 
@@ -47,14 +55,8 @@ func createThreadIds(ptr start_routine, ptr pStack2, dq stack_size, ptr out_chil
 	pStack = pStack & 0xfffffffffffffff0;
 	pStack = pStack - 8 - (8 * param_max); // reserve space for return address + parameters
 
-	dq ret = sys_clone(THREAD_FLAGS, pStack, out_parent_tid, out_child_tid, 0);
-
-	if ret == 0 {
-		loadReg(rbx, start_routine);
-		loadReg(rsp, pStack);
-		asm(call_raw_address, rbx);
-		exit(0);
-	}
+	dq ret = sys_clone(THREAD_FLAGS, pStack, out_parent_tid, out_child_tid, 0, start_routine, pStack);
+	
 	nanosleep(0, 1000000); // sleep 1ms to let thread start (otherwise sometimes the parent exits before child starts)
 	return ret;
 }
