@@ -28,10 +28,12 @@ global{
     dq SEEK_HOLE = 4;
 }
 
-struct Stat{ // minimal subset for size (offset 48 on x86_64 but we'll read via fstat syscall into this layout)
-    dq _pad1 dq<6>; // device/inode/mode/etc (simplified placeholder)
-    dq size;        // we only care about st_size (approx position)
-    dq _rest dq<7>; // padding to keep struct large enough
+struct Linux_dirent{
+    db file_name db<256>; // actual name is d_reclen - 19 bytes max
+    db d_type;
+    dw d_reclen; // length of this record
+    dq d_off;
+    dq d_ino;
 }
 
 // open(path, flags, mode)
@@ -44,6 +46,22 @@ func sys_open(ptr path, dq flags, dq mode){
     return;
 }
 
+func sys_fstat(dq fd, ptr statbuf){
+    asm(mov64_r_i, rax, 5);
+    loadReg(rdi, fd);
+    loadReg(rsi, statbuf);
+    asm(syscall);
+    return;
+}
+
+func getdents(dq fd, ptr buf, dq nbytes){
+    asm(mov64_r_i, rax, 78);
+    loadReg(rdi, fd);
+    loadReg(rsi, buf);
+    loadReg(rdx, nbytes);
+    asm(syscall);
+    return;
+}
 
 
 // lseek(fd, offset, whence)
