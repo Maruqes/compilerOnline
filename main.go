@@ -80,7 +80,21 @@ func compileHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if logger != nil {
-			logger.Info("new compilation accepted", zap.String("ip", clientIP), zap.Int("concurrent_total", total), zap.Int("concurrent_ip", perIP))
+			ipLimit := 0
+			totalLimit := 0
+			if appConfig != nil {
+				ipLimit = appConfig.MaxConcurrentCompilationsPerIP
+				totalLimit = appConfig.MaxConcurrentCompilations
+			}
+			logger.Info(fmt.Sprintf("this IP has %d active compilations out of max %d", perIP, ipLimit),
+				zap.String("ip", clientIP),
+				zap.Int("concurrent_ip", perIP),
+				zap.Int("limit_ip", ipLimit),
+			)
+			logger.Info(fmt.Sprintf("the program has %d active compilations out of max %d", total, totalLimit),
+				zap.Int("concurrent_total", total),
+				zap.Int("limit_total", totalLimit),
+			)
 		}
 		defer release()
 	}
