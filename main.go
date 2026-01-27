@@ -24,6 +24,7 @@ var adminUser string
 var adminPass string
 var appConfig *Config
 var kataExecTimeout time.Duration
+var compileLimiter *concurrencyLimiter
 
 // ContainerHistory armazena o histórico completo de todos os containers
 type ContainerHistory struct {
@@ -60,6 +61,21 @@ func compileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	clientIP := extractClientIP(r)
+	if compileLimiter != nil {
+		release, ok, msg, total, perIP := compileLimiter.tryAcquire(clientIP)
+		if !ok {
+			if logger != nil {
+				logger.Warn("compile concurrency limit hit", zap.String("ip", clientIP))
+			}
+			http.Error(w, msg, http.StatusTooManyRequests)
+			return
+		}
+		if logger != nil {
+			logger.Info("new compilation accepted", zap.String("ip", clientIP), zap.Int("concurrent_total", total), zap.Int("concurrent_ip", perIP))
+		}
+		defer release()
+	}
+
 	result, containerRecord, err := execInKataWithHistory(code)
 	if err != nil {
 		logger.Error("code execution failed", zap.Error(err))
@@ -326,6 +342,7 @@ func main() {
 	appConfig = cfg
 	adminUser = cfg.AdminUser
 	adminPass = cfg.AdminPass
+	compileLimiter = newConcurrencyLimiter(cfg.MaxConcurrentCompilations, cfg.MaxConcurrentCompilationsPerIP)
 
 	// Inicializa logger custom que grava em SQLite (data/logs.sql)
 	logDBPath := "data/logs.sql" // extensão .sql como solicitado
@@ -337,7 +354,7 @@ func main() {
 	logger = l
 
 	// Print sanitized config
-	logger.Info("config loaded", zap.String("port", cfg.Port), zap.String("log_level", cfg.LogLevel), zap.String("sandbox_base_image", cfg.SandboxBaseImage), zap.String("sandbox_runtime", cfg.SandboxRuntime), zap.Int("sandbox_cpu_quota_percent", cfg.SandboxCPUQuotaPercent), zap.Duration("kata_exec_timeout", cfg.KataExecTimeout), zap.Int("rate_limit_per_min", cfg.RateLimitPerMin), zap.Int("rate_limit_burst", cfg.RateLimitBurst), zap.Int("admin_login_rate_per_min", cfg.AdminLoginRateLimitPerMin), zap.Int("admin_login_rate_burst", cfg.AdminLoginRateLimitBurst))
+	logger.Info("config loaded", zap.String("port", cfg.Port), zap.String("log_level", cfg.LogLevel), zap.String("sandbox_base_image", cfg.SandboxBaseImage), zap.String("sandbox_runtime", cfg.SandboxRuntime), zap.Int("sandbox_cpu_quota_percent", cfg.SandboxCPUQuotaPercent), zap.Duration("kata_exec_timeout", cfg.KataExecTimeout), zap.Int("rate_limit_per_min", cfg.RateLimitPerMin), zap.Int("rate_limit_burst", cfg.RateLimitBurst), zap.Int("admin_login_rate_per_min", cfg.AdminLoginRateLimitPerMin), zap.Int("admin_login_rate_burst", cfg.AdminLoginRateLimitBurst), zap.Int("max_concurrent_compilations", cfg.MaxConcurrentCompilations), zap.Int("max_concurrent_compilations_per_ip", cfg.MaxConcurrentCompilationsPerIP))
 
 	// Base image preload (pull once at startup so first user request is fast)
 	baseRef := cfg.SandboxBaseImage

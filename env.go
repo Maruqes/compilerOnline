@@ -10,36 +10,40 @@ import (
 // Config centralizes all environment-driven settings.
 // Add new fields here and in LoadConfig.
 type Config struct {
-	Port                      string
-	LogLevel                  string
-	AdminUser                 string
-	AdminPass                 string
-	JWTSecret                 string
-	SandboxBaseImage          string
-	SandboxRuntime            string
-	SandboxCPUQuotaPercent    int // 0 means unlimited / not set
-	KataExecTimeout           time.Duration
-	RateLimitPerMin           int
-	RateLimitBurst            int
-	AdminLoginRateLimitPerMin int
-	AdminLoginRateLimitBurst  int
+	Port                           string
+	LogLevel                       string
+	AdminUser                      string
+	AdminPass                      string
+	JWTSecret                      string
+	SandboxBaseImage               string
+	SandboxRuntime                 string
+	SandboxCPUQuotaPercent         int // 0 means unlimited / not set
+	KataExecTimeout                time.Duration
+	RateLimitPerMin                int
+	RateLimitBurst                 int
+	AdminLoginRateLimitPerMin      int
+	AdminLoginRateLimitBurst       int
+	MaxConcurrentCompilations      int
+	MaxConcurrentCompilationsPerIP int
 }
 
 func LoadConfig() (*Config, error) {
 	c := &Config{
-		Port:                      getEnvDefault("PORT", "8080"),
-		LogLevel:                  getEnvDefault("LOG_LEVEL", "info"),
-		AdminUser:                 os.Getenv("ADMIN_USER"),
-		AdminPass:                 os.Getenv("ADMIN_PASS"),
-		JWTSecret:                 os.Getenv("JWT_SECRET"),
-		SandboxBaseImage:          getEnvDefault("SANDBOX_BASE_IMAGE", "docker.io/library/busybox:latest"),
-		SandboxRuntime:            getEnvDefault("SANDBOX_RUNTIME", "io.containerd.kata.v2"),
-		SandboxCPUQuotaPercent:    getEnvInt("SANDBOX_CPU_QUOTA_PERCENT", 0),
-		KataExecTimeout:           getEnvDurationSeconds("KATA_EXEC_TIMEOUT_SECONDS", 10),
-		RateLimitPerMin:           getEnvInt("RATE_LIMIT_PER_MIN", 60),
-		RateLimitBurst:            getEnvInt("RATE_LIMIT_BURST", 80),
-		AdminLoginRateLimitPerMin: getEnvInt("ADMIN_LOGIN_RATE_LIMIT_PER_MIN", 15),
-		AdminLoginRateLimitBurst:  getEnvInt("ADMIN_LOGIN_RATE_LIMIT_BURST", 10),
+		Port:                           getEnvDefault("PORT", "8080"),
+		LogLevel:                       getEnvDefault("LOG_LEVEL", "info"),
+		AdminUser:                      os.Getenv("ADMIN_USER"),
+		AdminPass:                      os.Getenv("ADMIN_PASS"),
+		JWTSecret:                      os.Getenv("JWT_SECRET"),
+		SandboxBaseImage:               getEnvDefault("SANDBOX_BASE_IMAGE", "docker.io/library/busybox:latest"),
+		SandboxRuntime:                 getEnvDefault("SANDBOX_RUNTIME", "io.containerd.kata.v2"),
+		SandboxCPUQuotaPercent:         getEnvInt("SANDBOX_CPU_QUOTA_PERCENT", 0),
+		KataExecTimeout:                getEnvDurationSeconds("KATA_EXEC_TIMEOUT_SECONDS", 10),
+		RateLimitPerMin:                getEnvInt("RATE_LIMIT_PER_MIN", 60),
+		RateLimitBurst:                 getEnvInt("RATE_LIMIT_BURST", 80),
+		AdminLoginRateLimitPerMin:      getEnvInt("ADMIN_LOGIN_RATE_LIMIT_PER_MIN", 15),
+		AdminLoginRateLimitBurst:       getEnvInt("ADMIN_LOGIN_RATE_LIMIT_BURST", 10),
+		MaxConcurrentCompilations:      getEnvInt("MAX_CONCURRENT_COMPILATIONS", 10),
+		MaxConcurrentCompilationsPerIP: getEnvInt("MAX_CONCURRENT_COMPILATIONS_PER_IP", 2),
 	}
 
 	if c.JWTSecret == "" {
