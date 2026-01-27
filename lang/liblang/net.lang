@@ -35,11 +35,11 @@ func htonl(dq v){
 	return r;
 }
 
-func sys_socket(dq AF_INET, dq SOCK_STREAM, dq IPPROTO_TCP){
+func sys_socket(dq AF_INET_PARAM, dq SOCK_STREAM_PARAM, dq IPPROTO_TCP_PARAM){
 	asm(mov64_r_i, rax, 41);
-	loadReg(rdi, AF_INET);
-	loadReg(rsi, SOCK_STREAM);
-	loadReg(rdx, IPPROTO_TCP);
+	loadReg(rdi, AF_INET_PARAM);
+	loadReg(rsi, SOCK_STREAM_PARAM);
+	loadReg(rdx, IPPROTO_TCP_PARAM);
 	asm(syscall);
 	return;
 }

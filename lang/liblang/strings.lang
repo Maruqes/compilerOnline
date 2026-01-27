@@ -134,3 +134,27 @@ func string_to_int(ptr str){
 	}
 	return result;
 }
+
+func append_string(ptr dest,dq max_len, ptr str1, ptr str2){
+	dd len1 = getStringLen(str1);
+	dd len2 = getStringLen(str2);
+
+	if (len1 + len2 + 1 > max_len) { // +1 for null terminator
+		errorf("Error: append_string would exceed max_len\n");
+		return;
+	}
+
+	// copy str1 to dest
+	for dd i = 0; i < len1; i++; {
+		dest[i] = str1[i];
+	}
+
+	// copy str2 to dest after str1
+	for dd j = 0; j < len2; j++; {
+		dest[len1 + j] = str2[j];
+	}
+
+	// null terminate
+	dest[len1 + len2] = 0;
+	return;
+}
