@@ -65,7 +65,16 @@ func compileHandler(w http.ResponseWriter, r *http.Request) {
 		release, ok, msg, total, perIP := compileLimiter.tryAcquire(clientIP)
 		if !ok {
 			if logger != nil {
-				logger.Warn("compile concurrency limit hit", zap.String("ip", clientIP))
+				fields := []zap.Field{
+					zap.String("ip", clientIP),
+					zap.String("reason", msg),
+					zap.Int("concurrent_total", total),
+					zap.Int("concurrent_ip", perIP),
+				}
+				if appConfig != nil {
+					fields = append(fields, zap.Int("limit_total", appConfig.MaxConcurrentCompilations), zap.Int("limit_ip", appConfig.MaxConcurrentCompilationsPerIP))
+				}
+				logger.Warn("compile concurrency limit hit", fields...)
 			}
 			http.Error(w, msg, http.StatusTooManyRequests)
 			return
