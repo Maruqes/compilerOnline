@@ -1022,19 +1022,21 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 
 // minimal custom cursor support to match site
 const cursor = document.getElementById('cursor');
-let mouseX = 0, mouseY = 0, cursorX = 0, cursorY = 0;
-function updateCursor() {
-	const diffX = mouseX - cursorX;
-	const diffY = mouseY - cursorY;
-	cursorX += diffX * 0.1;
-	cursorY += diffY * 0.1;
-	cursor.style.transform = `translate(${cursorX - 10}px, ${cursorY - 10}px)`;
-	requestAnimationFrame(updateCursor);
+if (cursor) {
+	let mouseX = 0, mouseY = 0, cursorX = 0, cursorY = 0;
+	function updateCursor() {
+		const diffX = mouseX - cursorX;
+		const diffY = mouseY - cursorY;
+		cursorX += diffX * 0.1;
+		cursorY += diffY * 0.1;
+		cursor.style.transform = `translate(${cursorX - 10}px, ${cursorY - 10}px)`;
+		requestAnimationFrame(updateCursor);
+	}
+	document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+	document.addEventListener('mouseleave', () => { cursor.style.opacity = '0'; });
+	document.addEventListener('mouseenter', () => { cursor.style.opacity = '0.8'; });
+	updateCursor();
 }
-document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
-document.addEventListener('mouseleave', () => { cursor.style.opacity = '0'; });
-document.addEventListener('mouseenter', () => { cursor.style.opacity = '0.8'; });
-updateCursor();
 
 // Expose loadExample globally for potential future deep-linking
 window.loadExample = loadExample;
