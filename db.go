@@ -70,6 +70,9 @@ func migrate() error {
 	if err := ensureIPColumn(); err != nil {
 		return fmt.Errorf("ensure ip column: %w", err)
 	}
+	if err := ensureAdminLoginFailuresSchema(); err != nil {
+		return fmt.Errorf("ensure admin login failures schema: %w", err)
+	}
 	return nil
 }
 
@@ -96,13 +99,13 @@ func ensureMinimalSchema() error {
 	}
 	// ip column intentionally NOT part of strict minimal set so we can add it later with simple ALTER (avoid full copy if it's the only missing col)
 	required := []string{"id", "container_id", "created_at", "finished_at", "execution_time_ms", "code_executed", "output", "error_message"}
-	requiredSet := map[string]struct{}{}
+	allowedSet := map[string]struct{}{"ip": {}}
 	for _, c := range required {
-		requiredSet[c] = struct{}{}
+		allowedSet[c] = struct{}{}
 	}
 	extraneous := false
 	for _, c := range cols {
-		if _, ok := requiredSet[c]; !ok {
+		if _, ok := allowedSet[c]; !ok {
 			extraneous = true
 			break
 		}
@@ -209,12 +212,36 @@ func ensureIPColumn() error {
 	return nil
 }
 
+func ensureAdminLoginFailuresSchema() error {
+	ddl := `CREATE TABLE IF NOT EXISTS admin_login_failures (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		occurred_at TIMESTAMP NOT NULL,
+		ip TEXT NOT NULL,
+		username TEXT,
+		user_agent TEXT,
+		reason TEXT
+	);`
+	if _, err := db.Exec(ddl); err != nil {
+		return err
+	}
+	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_admin_login_failures_occurred_at ON admin_login_failures(occurred_at)`); err != nil {
+		return err
+	}
+	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_admin_login_failures_ip ON admin_login_failures(ip)`); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ensureTimingsColumn adds the timings_json column if missing.
 // timings_json column removal: no longer ensured
 
 func pruneOld() error {
 	cutoff := time.Now().Add(-retentionPeriod)
-	_, err := db.Exec(`DELETE FROM containers WHERE created_at < ?`, cutoff.UTC())
+	if _, err := db.Exec(`DELETE FROM containers WHERE created_at < ?`, cutoff.UTC()); err != nil {
+		return err
+	}
+	_, err := db.Exec(`DELETE FROM admin_login_failures WHERE occurred_at < ?`, cutoff.UTC())
 	return err
 }
 
@@ -270,6 +297,193 @@ func listContainerRecords(limit int) ([]ContainerRecord, error) {
 		out = append(out, r)
 	}
 	return out, rows.Err()
+}
+
+type TimePoint struct {
+	Time  time.Time `json:"time"`
+	Count int       `json:"count"`
+}
+
+type IPStat struct {
+	IP        string    `json:"ip"`
+	Count     int       `json:"count"`
+	FirstSeen time.Time `json:"first_seen"`
+	LastSeen  time.Time `json:"last_seen"`
+}
+
+type AdminLoginFailure struct {
+	OccurredAt time.Time `json:"occurred_at"`
+	IP         string    `json:"ip"`
+	Username   string    `json:"username,omitempty"`
+	UserAgent  string    `json:"user_agent,omitempty"`
+	Reason     string    `json:"reason,omitempty"`
+}
+
+type AdminLoginFailureStats struct {
+	Total  int                 `json:"total"`
+	IPs    []IPStat            `json:"ips"`
+	Recent []AdminLoginFailure `json:"recent"`
+}
+
+type ObservabilityStats struct {
+	From                 time.Time              `json:"from"`
+	To                   time.Time              `json:"to"`
+	UniqueIPCount        int                    `json:"unique_ip_count"`
+	UniqueIPs            []IPStat               `json:"unique_ips"`
+	TotalCompilations    int                    `json:"total_compilations"`
+	HourlyCompilations   []TimePoint            `json:"hourly_compilations"`
+	SuccessCount         int                    `json:"success_count"`
+	ErrorCount           int                    `json:"error_count"`
+	AverageCompileTimeMS float64                `json:"average_compile_time_ms"`
+	FailedAdminLogins    AdminLoginFailureStats `json:"failed_admin_logins"`
+}
+
+func saveAdminLoginFailure(ip, username, userAgent, reason string) error {
+	if db == nil {
+		return errors.New("db not initialized")
+	}
+	if ip == "" {
+		ip = "unknown"
+	}
+	_, err := db.Exec(`INSERT INTO admin_login_failures (occurred_at, ip, username, user_agent, reason) VALUES (?,?,?,?,?)`,
+		time.Now().UTC(), ip, username, userAgent, reason)
+	return err
+}
+
+func getObservabilityStats(from, to time.Time) (ObservabilityStats, error) {
+	if db == nil {
+		return ObservabilityStats{}, errors.New("db not initialized")
+	}
+	from = from.UTC()
+	to = to.UTC()
+	stats := ObservabilityStats{From: from, To: to}
+	if err := db.QueryRow(`SELECT COUNT(*) FROM containers WHERE created_at >= ? AND created_at < ?`, from, to).Scan(&stats.TotalCompilations); err != nil {
+		return stats, err
+	}
+	if err := db.QueryRow(`SELECT COUNT(DISTINCT ip) FROM containers WHERE created_at >= ? AND created_at < ? AND COALESCE(ip,'') <> ''`, from, to).Scan(&stats.UniqueIPCount); err != nil {
+		return stats, err
+	}
+	if err := db.QueryRow(`SELECT COUNT(*) FROM containers WHERE created_at >= ? AND created_at < ? AND COALESCE(error_message,'') = ''`, from, to).Scan(&stats.SuccessCount); err != nil {
+		return stats, err
+	}
+	if err := db.QueryRow(`SELECT COUNT(*) FROM containers WHERE created_at >= ? AND created_at < ? AND COALESCE(error_message,'') <> ''`, from, to).Scan(&stats.ErrorCount); err != nil {
+		return stats, err
+	}
+	var avg sql.NullFloat64
+	if err := db.QueryRow(`SELECT AVG(execution_time_ms) FROM containers WHERE created_at >= ? AND created_at < ?`, from, to).Scan(&avg); err != nil {
+		return stats, err
+	}
+	if avg.Valid {
+		stats.AverageCompileTimeMS = avg.Float64
+	}
+	ips, err := listIPStats(`created_at`, `containers`, from, to)
+	if err != nil {
+		return stats, err
+	}
+	stats.UniqueIPs = ips
+	hourly, err := listHourlyCompilations(from, to)
+	if err != nil {
+		return stats, err
+	}
+	stats.HourlyCompilations = hourly
+	failed, err := listAdminLoginFailures(from, to)
+	if err != nil {
+		return stats, err
+	}
+	stats.FailedAdminLogins = failed
+	return stats, nil
+}
+
+func listIPStats(timeColumn, table string, from, to time.Time) ([]IPStat, error) {
+	query := fmt.Sprintf(`SELECT ip, COUNT(*) AS total_count, strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', MIN(%s)) AS first_seen, strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', MAX(%s)) AS last_seen
+		FROM %s
+		WHERE %s >= ? AND %s < ? AND COALESCE(ip,'') <> ''
+		GROUP BY ip
+		ORDER BY total_count DESC, last_seen DESC`, timeColumn, timeColumn, table, timeColumn, timeColumn)
+	rows, err := db.Query(query, from, to)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []IPStat
+	for rows.Next() {
+		var s IPStat
+		var firstSeen, lastSeen string
+		if err := rows.Scan(&s.IP, &s.Count, &firstSeen, &lastSeen); err != nil {
+			return nil, err
+		}
+		s.FirstSeen, _ = time.Parse(time.RFC3339Nano, firstSeen)
+		s.LastSeen, _ = time.Parse(time.RFC3339Nano, lastSeen)
+		out = append(out, s)
+	}
+	return out, rows.Err()
+}
+
+func listHourlyCompilations(from, to time.Time) ([]TimePoint, error) {
+	rows, err := db.Query(`SELECT strftime('%Y-%m-%dT%H:00:00Z', created_at) AS hour, COUNT(*)
+		FROM containers
+		WHERE created_at >= ? AND created_at < ?
+		GROUP BY hour
+		ORDER BY hour ASC`, from, to)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	counts := map[time.Time]int{}
+	for rows.Next() {
+		var hourStr string
+		var count int
+		if err := rows.Scan(&hourStr, &count); err != nil {
+			return nil, err
+		}
+		t, err := time.Parse(time.RFC3339, hourStr)
+		if err != nil {
+			continue
+		}
+		counts[t.UTC()] = count
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	start := from.Truncate(time.Hour)
+	capacity := int(to.Sub(start).Hours()) + 1
+	if capacity < 1 {
+		capacity = 1
+	}
+	points := make([]TimePoint, 0, capacity)
+	for t := start; t.Before(to); t = t.Add(time.Hour) {
+		points = append(points, TimePoint{Time: t, Count: counts[t]})
+	}
+	return points, nil
+}
+
+func listAdminLoginFailures(from, to time.Time) (AdminLoginFailureStats, error) {
+	var stats AdminLoginFailureStats
+	if err := db.QueryRow(`SELECT COUNT(*) FROM admin_login_failures WHERE occurred_at >= ? AND occurred_at < ?`, from, to).Scan(&stats.Total); err != nil {
+		return stats, err
+	}
+	ips, err := listIPStats(`occurred_at`, `admin_login_failures`, from, to)
+	if err != nil {
+		return stats, err
+	}
+	stats.IPs = ips
+	rows, err := db.Query(`SELECT occurred_at, ip, COALESCE(username,''), COALESCE(user_agent,''), COALESCE(reason,'')
+		FROM admin_login_failures
+		WHERE occurred_at >= ? AND occurred_at < ?
+		ORDER BY occurred_at DESC
+		LIMIT 100`, from, to)
+	if err != nil {
+		return stats, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var f AdminLoginFailure
+		if err := rows.Scan(&f.OccurredAt, &f.IP, &f.Username, &f.UserAgent, &f.Reason); err != nil {
+			return stats, err
+		}
+		stats.Recent = append(stats.Recent, f)
+	}
+	return stats, rows.Err()
 }
 
 // old nullable helpers removed (metrics dropped)

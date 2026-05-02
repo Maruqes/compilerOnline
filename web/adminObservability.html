@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full scroll-smooth">
+
+<head>
+	<meta charset="UTF-8" />
+	<title>Admin Observability - 512lang</title>
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link
+		href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap"
+		rel="stylesheet">
+	<script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+	<link rel="stylesheet" href="/site.css" />
+</head>
+
+<body class="min-h-full bg-slate-950 text-slate-100 antialiased selection:bg-fuchsia-600/40 selection:text-fuchsia-100">
+	<div class="hero-bg min-h-screen py-8">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+			<div class="mb-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+				<div>
+					<a href="/admin" class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-fuchsia-300 mb-4">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+						</svg>
+						Admin Dashboard
+					</a>
+					<h1 class="text-4xl md:text-5xl font-extrabold grad-text mb-3">Observability</h1>
+					<p class="text-slate-300">Compilations, unique IPs and failed admin logins</p>
+				</div>
+				<div class="flex items-center gap-2 text-sm text-slate-400">
+					<div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+					<span id="refreshStatus">Loading...</span>
+				</div>
+			</div>
+
+			<div class="glow mb-8">
+				<div class="bg-slate-900/80 border border-slate-800/60 rounded-lg p-4">
+					<div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+						<div class="flex flex-wrap gap-2" id="rangeButtons">
+							<button data-range="1d" class="range-btn px-4 py-2 rounded-lg text-sm font-semibold">1 day</button>
+							<button data-range="7d" class="range-btn px-4 py-2 rounded-lg text-sm font-semibold">7 days</button>
+							<button data-range="1m" class="range-btn px-4 py-2 rounded-lg text-sm font-semibold">1 month</button>
+							<button data-range="3m" class="range-btn px-4 py-2 rounded-lg text-sm font-semibold">3 months</button>
+							<button data-range="custom" class="range-btn px-4 py-2 rounded-lg text-sm font-semibold">Custom</button>
+						</div>
+						<div class="flex flex-wrap items-center gap-3">
+							<label class="flex items-center gap-2 text-sm text-slate-300">From
+								<input id="customFrom" type="datetime-local"
+									class="px-2 py-1.5 text-sm bg-slate-800/70 border border-slate-700/70 rounded-md focus:outline-none focus:ring-1 focus:ring-fuchsia-600 text-slate-100" />
+							</label>
+							<label class="flex items-center gap-2 text-sm text-slate-300">To
+								<input id="customTo" type="datetime-local"
+									class="px-2 py-1.5 text-sm bg-slate-800/70 border border-slate-700/70 rounded-md focus:outline-none focus:ring-1 focus:ring-fuchsia-600 text-slate-100" />
+							</label>
+							<button id="applyCustom"
+								class="px-3 py-1.5 text-sm bg-fuchsia-600/20 hover:bg-fuchsia-600/30 text-fuchsia-300 border border-fuchsia-600/30 hover:border-fuchsia-500/50 rounded-lg transition-all">Apply</button>
+							<button id="refreshNow"
+								class="px-3 py-1.5 text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg transition-all">Refresh</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="grid gap-5 md:grid-cols-2 xl:grid-cols-5 mb-8">
+				<div class="bg-slate-900/80 border border-slate-800/60 rounded-lg p-5">
+					<div class="text-xs uppercase tracking-wide text-slate-400 mb-2">Unique IPs</div>
+					<div id="uniqueIPCount" class="text-3xl font-bold text-fuchsia-300">0</div>
+				</div>
+				<div class="bg-slate-900/80 border border-slate-800/60 rounded-lg p-5">
+					<div class="text-xs uppercase tracking-wide text-slate-400 mb-2">Total Compilations</div>
+					<div id="totalCompilations" class="text-3xl font-bold text-cyan-300">0</div>
+				</div>
+				<div class="bg-slate-900/80 border border-slate-800/60 rounded-lg p-5">
+					<div class="text-xs uppercase tracking-wide text-slate-400 mb-2">Success / Error</div>
+					<div id="successError" class="text-3xl font-bold text-emerald-300">0 / 0</div>
+				</div>
+				<div class="bg-slate-900/80 border border-slate-800/60 rounded-lg p-5">
+					<div class="text-xs uppercase tracking-wide text-slate-400 mb-2">Avg Compile Time</div>
+					<div id="avgCompileTime" class="text-3xl font-bold text-amber-300">0ms</div>
+				</div>
+				<div class="bg-slate-900/80 border border-slate-800/60 rounded-lg p-5">
+					<div class="text-xs uppercase tracking-wide text-slate-400 mb-2">Failed Admin Logins</div>
+					<div id="failedLogins" class="text-3xl font-bold text-red-300">0</div>
+				</div>
+			</div>
+
+			<div class="grid gap-8 xl:grid-cols-3 mb-8">
+				<div class="xl:col-span-2 glow">
+					<div class="bg-slate-900/80 border border-slate-800/60 rounded-lg overflow-hidden">
+						<div class="px-6 py-4 bg-slate-800/60 border-b border-slate-700/60">
+							<h2 class="text-lg font-semibold text-slate-200">Compilations per hour</h2>
+						</div>
+						<div class="p-5">
+							<canvas id="hourlyChart" class="w-full h-80"></canvas>
+						</div>
+					</div>
+				</div>
+				<div class="glow">
+					<div class="bg-slate-900/80 border border-slate-800/60 rounded-lg overflow-hidden h-full">
+						<div class="px-6 py-4 bg-slate-800/60 border-b border-slate-700/60">
+							<h2 class="text-lg font-semibold text-slate-200">Success vs error</h2>
+						</div>
+						<div class="p-5">
+							<div class="space-y-4">
+								<div>
+									<div class="flex justify-between text-sm mb-2"><span class="text-emerald-300">Success</span><span id="successRate">0%</span></div>
+									<div class="h-4 bg-slate-800 rounded overflow-hidden"><div id="successBar" class="h-full bg-emerald-500" style="width:0%"></div></div>
+								</div>
+								<div>
+									<div class="flex justify-between text-sm mb-2"><span class="text-red-300">Error</span><span id="errorRate">0%</span></div>
+									<div class="h-4 bg-slate-800 rounded overflow-hidden"><div id="errorBar" class="h-full bg-red-500" style="width:0%"></div></div>
+								</div>
+								<div id="rangeMeta" class="text-xs text-slate-500 font-mono pt-4"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="grid gap-8 xl:grid-cols-2">
+				<div class="glow">
+					<div class="bg-slate-900/80 border border-slate-800/60 rounded-lg overflow-hidden">
+						<div class="px-6 py-4 bg-slate-800/60 border-b border-slate-700/60">
+							<h2 class="text-lg font-semibold text-slate-200">Unique IP list</h2>
+						</div>
+						<div class="overflow-x-auto">
+							<table class="min-w-full text-xs text-left font-mono">
+								<thead class="bg-slate-800/60 text-slate-300 uppercase">
+									<tr>
+										<th class="px-4 py-2">IP</th>
+										<th class="px-4 py-2">Compilations</th>
+										<th class="px-4 py-2">First Seen</th>
+										<th class="px-4 py-2">Last Seen</th>
+									</tr>
+								</thead>
+								<tbody id="uniqueIPsBody" class="divide-y divide-slate-800"></tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+				<div class="glow">
+					<div class="bg-slate-900/80 border border-slate-800/60 rounded-lg overflow-hidden">
+						<div class="px-6 py-4 bg-slate-800/60 border-b border-slate-700/60">
+							<h2 class="text-lg font-semibold text-slate-200">Failed admin logins by IP</h2>
+						</div>
+						<div class="overflow-x-auto">
+							<table class="min-w-full text-xs text-left font-mono">
+								<thead class="bg-slate-800/60 text-slate-300 uppercase">
+									<tr>
+										<th class="px-4 py-2">IP</th>
+										<th class="px-4 py-2">Failures</th>
+										<th class="px-4 py-2">First Seen</th>
+										<th class="px-4 py-2">Last Seen</th>
+									</tr>
+								</thead>
+								<tbody id="failedIPsBody" class="divide-y divide-slate-800"></tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="glow mt-8">
+				<div class="bg-slate-900/80 border border-slate-800/60 rounded-lg overflow-hidden">
+					<div class="px-6 py-4 bg-slate-800/60 border-b border-slate-700/60">
+						<h2 class="text-lg font-semibold text-slate-200">Recent failed admin login requests</h2>
+					</div>
+					<div class="overflow-x-auto">
+						<table class="min-w-full text-xs text-left font-mono">
+							<thead class="bg-slate-800/60 text-slate-300 uppercase">
+								<tr>
+									<th class="px-4 py-2">Time</th>
+									<th class="px-4 py-2">IP</th>
+									<th class="px-4 py-2">Username</th>
+									<th class="px-4 py-2">Reason</th>
+									<th class="px-4 py-2">User Agent</th>
+								</tr>
+							</thead>
+							<tbody id="failedRecentBody" class="divide-y divide-slate-800"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script src="/observability.js"></script>
+</body>
+
+</html>

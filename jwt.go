@@ -113,6 +113,13 @@ func adminHandlerLogin(w http.ResponseWriter, r *http.Request) {
 	user := r.FormValue("username")
 	pass := r.FormValue("password")
 	if user != adminUser || pass != adminPass {
+		ip := extractClientIP(r)
+		if err := saveAdminLoginFailure(ip, user, r.UserAgent(), "invalid_credentials"); err != nil && logger != nil {
+			logger.Warn("failed to persist admin login failure", zap.String("ip", ip), zap.Error(err))
+		}
+		if logger != nil {
+			logger.Warn("admin login failed", zap.String("ip", ip), zap.String("username", user))
+		}
 		http.Error(w, "invalid credentials", http.StatusUnauthorized)
 		return
 	}
@@ -131,4 +138,8 @@ func adminHandlerLogin(w http.ResponseWriter, r *http.Request) {
 // adminHandler serves admin.html (protected by JWT middleware).
 func adminHandler(w http.ResponseWriter, r *http.Request) {
 	(http.ServeFile)(w, r, "web/admin.html")
+}
+
+func adminObservabilityHandler(w http.ResponseWriter, r *http.Request) {
+	(http.ServeFile)(w, r, "web/adminObservability.html")
 }

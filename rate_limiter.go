@@ -80,6 +80,11 @@ func rateLimitMiddleware(next http.Handler, limiter *ipLimiter) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip := extractClientIP(r)
 		if !limiter.allow(ip) {
+			if r.URL.Path == "/adminLogin" {
+				if err := saveAdminLoginFailure(ip, "", r.UserAgent(), "rate_limited"); err != nil && logger != nil {
+					logger.Warn("failed to persist admin login rate-limit failure")
+				}
+			}
 			w.Header().Set("Retry-After", "1")
 			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
 			return

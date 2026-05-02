@@ -266,6 +266,77 @@ func logsHandler(w http.ResponseWriter, r *http.Request) {
 	}{Logs: logs, Count: len(logs), Limit: limit, Level: level})
 }
 
+func observabilityHandler(w http.ResponseWriter, r *http.Request) {
+	from, to, err := parseObservabilityRange(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	stats, err := getObservabilityStats(from, to)
+	if err != nil {
+		logger.Error("observability stats", zap.Error(err))
+		http.Error(w, "error loading observability stats", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(stats)
+}
+
+func parseObservabilityRange(r *http.Request) (time.Time, time.Time, error) {
+	now := time.Now().UTC()
+	preset := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("range")))
+	if preset == "" {
+		preset = "1d"
+	}
+	switch preset {
+	case "1d", "day", "24h":
+		return now.Add(-24 * time.Hour), now, nil
+	case "7d", "week":
+		return now.Add(-7 * 24 * time.Hour), now, nil
+	case "1m", "month", "30d":
+		return now.Add(-30 * 24 * time.Hour), now, nil
+	case "3m", "3months", "90d":
+		return now.Add(-90 * 24 * time.Hour), now, nil
+	case "custom":
+		from, err := parseQueryTime(r.URL.Query().Get("from"))
+		if err != nil {
+			return time.Time{}, time.Time{}, fmt.Errorf("invalid from")
+		}
+		to, err := parseQueryTime(r.URL.Query().Get("to"))
+		if err != nil {
+			return time.Time{}, time.Time{}, fmt.Errorf("invalid to")
+		}
+		if !from.Before(to) {
+			return time.Time{}, time.Time{}, fmt.Errorf("from must be before to")
+		}
+		return from.UTC(), to.UTC(), nil
+	default:
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid range")
+	}
+}
+
+func parseQueryTime(value string) (time.Time, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}, fmt.Errorf("empty time")
+	}
+	layouts := []string{
+		time.RFC3339,
+		"2006-01-02T15:04",
+		"2006-01-02 15:04",
+		"2006-01-02",
+	}
+	var lastErr error
+	for _, layout := range layouts {
+		t, err := time.Parse(layout, value)
+		if err == nil {
+			return t, nil
+		}
+		lastErr = err
+	}
+	return time.Time{}, lastErr
+}
+
 func getContainerStats() ([]ContainerStats, error) {
 	// Conectar ao containerd
 	client, err := containerd.New("/run/containerd/containerd.sock")
@@ -450,7 +521,9 @@ func main() {
 	http.HandleFunc("/stats", requireAdmin(statsHandler))
 	http.HandleFunc("/history", requireAdmin(historyHandler))
 	http.HandleFunc("/logs", requireAdmin(logsHandler))
+	http.HandleFunc("/observability", requireAdmin(observabilityHandler))
 	http.HandleFunc("/admin", requireAdmin(adminHandler))
+	http.HandleFunc("/admin/observability", requireAdmin(adminObservabilityHandler))
 	http.Handle("/adminLogin", rateLimitMiddleware(http.HandlerFunc(adminHandlerLogin), adminLimiter))
 
 	addr := ":" + cfg.Port
