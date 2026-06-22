@@ -18,6 +18,7 @@ type Config struct {
 	SandboxBaseImage               string
 	SandboxRuntime                 string
 	SandboxCPUQuotaPercent         int // 0 means unlimited / not set
+	LangDir                        string
 	KataExecTimeout                time.Duration
 	RateLimitPerMin                int
 	RateLimitBurst                 int
@@ -37,6 +38,7 @@ func LoadConfig() (*Config, error) {
 		SandboxBaseImage:               getEnvDefault("SANDBOX_BASE_IMAGE", "docker.io/library/busybox:latest"),
 		SandboxRuntime:                 getEnvDefault("SANDBOX_RUNTIME", "io.containerd.kata.v2"),
 		SandboxCPUQuotaPercent:         getEnvInt("SANDBOX_CPU_QUOTA_PERCENT", 0),
+		LangDir:                        getEnvDefault("LANG_DIR", ""),
 		KataExecTimeout:                getEnvDurationSeconds("KATA_EXEC_TIMEOUT_SECONDS", 10),
 		RateLimitPerMin:                getEnvInt("RATE_LIMIT_PER_MIN", 60),
 		RateLimitBurst:                 getEnvInt("RATE_LIMIT_BURST", 80),

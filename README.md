@@ -13,6 +13,25 @@ A small web service that compiles and runs code for a custom language inside an 
 ### Why Kata?
 Stronger isolation than a plain container: lightweight VM boundary + resource limits (CPU quota, 128MB RAM, pid, rlimits, configurable wall clock timeout).
 
+### Prerequisites
+
+- A Linux host with **containerd** running.
+- For the default `io.containerd.kata.v2` runtime, the host kernel must provide the Kata/Firecracker virtio/vsock modules. Load them before starting the service:
+  ```bash
+  sudo modprobe vhost
+  sudo modprobe vhost_net
+  sudo modprobe vhost_vsock
+  ```
+  To make this persist across reboots:
+  ```bash
+  echo -e "vhost\nvhost_net\nvhost_vsock" | sudo tee /etc/modules-load.d/kata-containers.conf
+  ```
+  Verify Kata can use the host:
+  ```bash
+  sudo kata-runtime check
+  ```
+- If Kata is not available or you want faster (but less isolated) startup, set `SANDBOX_RUNTIME=io.containerd.runc.v2` in `.env`.
+
 ### Files that matter
 - `compileit.go` – does the sandbox run
 - `main.go` – HTTP server & wiring
@@ -44,10 +63,30 @@ SANDBOX_BASE_IMAGE=docker.io/library/busybox:latest  # Pulled & cached once at s
 # SANDBOX_ALLOW_ANY_IMAGE=1            # Disable base image allowlist (use with caution)
 JWT_TTL_MINUTES=240                   # Admin JWT lifetime (1-1440 minutes)
 JWT_AUDIENCE=prod-admin               # Optional audience claim
+LANG_DIR=/opt/compilerOnline/lang     # Path to the language toolchain (default: ./lang relative to CWD)
 ```
 Rules:
 - JWT secret (or admin pass) must be at least 16 chars.
 - If `.env` is missing the program exits.
+
+### Automated deployment (systemd)
+
+A deploy script installs the service under `/opt/compilerOnline`, builds the binary, loads the Kata kernel modules, and registers a systemd unit.
+
+On the target VM, from the project root:
+
+```bash
+sudo ./scripts/deploy.sh
+```
+
+After that it runs automatically on boot:
+
+```bash
+sudo systemctl status compileronline
+sudo systemctl restart compileronline
+```
+
+The service uses `LANG_DIR=/opt/compilerOnline/lang` by default, so it does not depend on the current working directory.
 
 ### Base Image Preload
 At startup the service pulls `SANDBOX_BASE_IMAGE` (defaults to `docker.io/library/busybox:latest`) using containerd and caches it so the first compile is fast. To reduce supply‑chain risk only `docker.io/library/*` images are allowed unless you set `SANDBOX_ALLOW_ANY_IMAGE=1`.

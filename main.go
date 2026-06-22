@@ -448,7 +448,7 @@ func main() {
 	logger = l
 
 	// Print sanitized config
-	logger.Info("config loaded", zap.String("port", cfg.Port), zap.String("log_level", cfg.LogLevel), zap.String("sandbox_base_image", cfg.SandboxBaseImage), zap.String("sandbox_runtime", cfg.SandboxRuntime), zap.Int("sandbox_cpu_quota_percent", cfg.SandboxCPUQuotaPercent), zap.Duration("kata_exec_timeout", cfg.KataExecTimeout), zap.Int("rate_limit_per_min", cfg.RateLimitPerMin), zap.Int("rate_limit_burst", cfg.RateLimitBurst), zap.Int("admin_login_rate_per_min", cfg.AdminLoginRateLimitPerMin), zap.Int("admin_login_rate_burst", cfg.AdminLoginRateLimitBurst), zap.Int("max_concurrent_compilations", cfg.MaxConcurrentCompilations), zap.Int("max_concurrent_compilations_per_ip", cfg.MaxConcurrentCompilationsPerIP))
+	logger.Info("config loaded", zap.String("port", cfg.Port), zap.String("log_level", cfg.LogLevel), zap.String("sandbox_base_image", cfg.SandboxBaseImage), zap.String("sandbox_runtime", cfg.SandboxRuntime), zap.Int("sandbox_cpu_quota_percent", cfg.SandboxCPUQuotaPercent), zap.String("lang_dir", cfg.LangDir), zap.Duration("kata_exec_timeout", cfg.KataExecTimeout), zap.Int("rate_limit_per_min", cfg.RateLimitPerMin), zap.Int("rate_limit_burst", cfg.RateLimitBurst), zap.Int("admin_login_rate_per_min", cfg.AdminLoginRateLimitPerMin), zap.Int("admin_login_rate_burst", cfg.AdminLoginRateLimitBurst), zap.Int("max_concurrent_compilations", cfg.MaxConcurrentCompilations), zap.Int("max_concurrent_compilations_per_ip", cfg.MaxConcurrentCompilationsPerIP))
 
 	// Base image preload (pull once at startup so first user request is fast)
 	baseRef := cfg.SandboxBaseImage

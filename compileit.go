@@ -195,11 +195,22 @@ func execInKata(code string) (string, string, error) {
 	phaseStart = time.Now()
 
 	//working directory and lang dir
-	wd, err := os.Getwd()
-	if err != nil {
-		return "", "", fmt.Errorf("getwd: %w", err)
+	langDir := ""
+	if appConfig != nil && appConfig.LangDir != "" {
+		langDir = appConfig.LangDir
 	}
-	langDir := filepath.Join(wd, "lang")
+	if langDir == "" {
+		if v := os.Getenv("LANG_DIR"); v != "" {
+			langDir = v
+		}
+	}
+	if langDir == "" {
+		wd, err := os.Getwd()
+		if err != nil {
+			return "", "", fmt.Errorf("getwd: %w", err)
+		}
+		langDir = filepath.Join(wd, "lang")
+	}
 	if fi, statErr := os.Stat(langDir); statErr != nil || !fi.IsDir() {
 		return "", "", fmt.Errorf("missing lang directory at %s", langDir)
 	}

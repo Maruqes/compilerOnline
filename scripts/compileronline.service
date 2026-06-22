@@ -1,0 +1,19 @@
+[Unit]
+Description=compilerOnline sandbox execution service
+After=network.target containerd.service
+Requires=containerd.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/compilerOnline
+Environment="LANG_DIR=/opt/compilerOnline/lang"
+EnvironmentFile=-/opt/compilerOnline/.env
+ExecStartPre=/usr/local/bin/compileronline-setup-kata.sh
+ExecStart=/opt/compilerOnline/compilerOnline
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
