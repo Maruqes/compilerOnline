@@ -1,0 +1,27 @@
+# Build artifacts
+compilerOnline
+
+# Local state we don't want to bake into the image (bind-mounted at runtime)
+data/
+mnt/
+.env
+
+# Git / editor / OS junk
+.git/
+.gitignore
+.vscode/
+.DS_Store
+*.md
+LICENSE
+
+# Docker meta (don't send to build context)
+Dockerfile
+.dockerignore
+docker-compose.yml
+.docker/
+
+# Go workspace / test artifacts
+go.work
+go.work.sum
+*.test
+*.out

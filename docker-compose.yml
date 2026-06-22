@@ -1,0 +1,99 @@
+# compilerOnline — Docker Compose
+#
+# Strategy: the container connects to containerd running ON THE HOST via the
+# mounted /run/containerd/containerd.sock. The host must already have:
+#   - containerd running
+#   - kata-runtime installed and registered in /etc/containerd/config.toml
+#     as runtime `io.containerd.kata.v2`
+#   - /dev/kvm available (VT-x / AMD-V)
+#
+# The container itself only needs the Go HTTP server binary + the lang/ assets
+# (which are bind-mounted read-only into the sandbox as /lang).
+#
+# Usage:
+#   docker compose build
+#   docker compose up
+#
+# Then open http://localhost:8080
+
+services:
+  compileronline:
+    container_name: compileronline
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: compileronline:latest
+
+    # Must run as root: the program needs to talk to containerd, create
+    # Kata sandboxes, and pull/cache images. We avoid the in-process
+    # sudo re-exec path by being root from the start.
+    user: "0:0"
+
+    # Privileged is required because the container drives containerd, which
+    # in turn spawns Kata VMs that need /dev/kvm and cgroup access on the host.
+    # If you tighten this, you must add at least:
+    #   cap_add: [SYS_ADMIN, NET_ADMIN, DAC_OVERRIDE, CHOWN, FOWNER, MKNOD]
+    #   security_opt: [apparmor=unconfined]
+    # plus mounts for /dev/kvm, /sys/fs/cgroup, /run/containerd.
+    privileged: true
+
+    restart: unless-stopped
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      # All env vars are read from the bind-mounted .env file by godotenv.Load,
+      # but we also forward a few critical ones for docker inspect clarity.
+      PORT: "8080"
+
+    volumes:
+      # --- Talk to host containerd (where Kata sandboxes actually run) ---
+      - /run/containerd/containerd.sock:/run/containerd/containerd.sock:rw
+      # containerd state / metadata (so image pulls done by the app are
+      # visible to the host and cached across container restarts)
+      - /var/lib/containerd:/var/lib/containerd:rw
+      # /tmp is used by containerd for ephemeral task sockets / shims
+      - /tmp:/tmp:rw
+      # /run so containerd-shim-kata-v2 can place its sockets there
+      - /run:/run:rw
+
+      # --- KVM so Kata VMs can be spawned ---
+      - /dev/kvm:/dev/kvm:rw
+
+      # --- cgroups + proc for resource limiting / introspection ---
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      # /proc/mount is read by kata-runtime; keep it visible
+      - /proc:/proc:rw
+
+      # --- App assets (bind-mounted so changes don't require image rebuild) ---
+      # Source .env (PORT, ADMIN_USER, ADMIN_PASS, JWT_SECRET, ...)
+      - ./.env:/app/.env:ro
+      # Language toolchain: mounted read-only into the sandbox container as /lang
+      - ./lang:/app/lang:ro
+      # Static web UI
+      - ./web:/app/web:ro
+      # Persistent SQLite DBs (containers.db, logs.sql)
+      - ./data:/app/data:rw
+      # Scratch mount referenced by code (kept for parity with bare-metal layout)
+      - ./mnt:/app/mnt:rw
+
+    # Healthcheck: HTTP server should respond on /
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e 'GET / HTTP/1.0\\r\\n\\r\\n' >&3 && head -n 1 <&3 | grep -q 'HTTP/1.0 200'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    # Keep stdin open for debugging with `docker attach`; allocate a TTY so
+    # zap's console encoder formats nicely in `docker compose logs`.
+    tty: true
+    stdin_open: true
+
+    # Limit log size on disk
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
