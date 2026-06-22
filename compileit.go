@@ -140,6 +140,99 @@ rm -rf "$TMPDIR"`, delim, code, delim)
 	return script, nil
 }
 
+func resolveLangMountSource(langDir string) (string, error) {
+	absLangDir, err := filepath.Abs(langDir)
+	if err != nil {
+		return "", fmt.Errorf("resolve lang directory path: %w", err)
+	}
+	realLangDir, err := filepath.EvalSymlinks(absLangDir)
+	if err != nil {
+		return "", fmt.Errorf("resolve lang directory symlinks at %s: %w", absLangDir, err)
+	}
+	fi, statErr := os.Stat(realLangDir)
+	if statErr != nil || !fi.IsDir() {
+		return "", fmt.Errorf("missing lang directory at %s", realLangDir)
+	}
+
+	source, err := resolveHostPathFromMountInfo(realLangDir)
+	if err != nil {
+		return "", err
+	}
+	return source, nil
+}
+
+func resolveHostPathFromMountInfo(containerPath string) (string, error) {
+	data, err := os.ReadFile("/proc/self/mountinfo")
+	if err != nil {
+		return containerPath, nil
+	}
+
+	containerPath = filepath.Clean(containerPath)
+	bestMountPoint := ""
+	bestRoot := ""
+	for _, line := range strings.Split(string(data), "\n") {
+		if line == "" {
+			continue
+		}
+		parts := strings.SplitN(line, " - ", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		fields := strings.Fields(parts[0])
+		if len(fields) < 5 {
+			continue
+		}
+		root := unescapeMountInfoPath(fields[3])
+		mountPoint := filepath.Clean(unescapeMountInfoPath(fields[4]))
+		if !pathContains(mountPoint, containerPath) {
+			continue
+		}
+		if len(mountPoint) > len(bestMountPoint) {
+			bestMountPoint = mountPoint
+			bestRoot = filepath.Clean(root)
+		}
+	}
+
+	if bestMountPoint == "" {
+		return containerPath, nil
+	}
+
+	rel, err := filepath.Rel(bestMountPoint, containerPath)
+	if err != nil {
+		return containerPath, nil
+	}
+	if rel == "." {
+		return bestRoot, nil
+	}
+	return filepath.Clean(filepath.Join(bestRoot, rel)), nil
+}
+
+func pathContains(parent, child string) bool {
+	if parent == child {
+		return true
+	}
+	rel, err := filepath.Rel(parent, child)
+	return err == nil && rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator))
+}
+
+func unescapeMountInfoPath(path string) string {
+	var b strings.Builder
+	for i := 0; i < len(path); i++ {
+		if path[i] == '\\' && i+3 < len(path) && isOctalDigit(path[i+1]) && isOctalDigit(path[i+2]) && isOctalDigit(path[i+3]) {
+			v := (path[i+1]-'0')*64 + (path[i+2]-'0')*8 + (path[i+3] - '0')
+			b.WriteByte(v)
+			i += 3
+			continue
+		}
+		b.WriteByte(path[i])
+	}
+	return b.String()
+}
+
+func isOctalDigit(c byte) bool {
+	return c >= '0' && c <= '7'
+}
+
 // execInKata executes code inside a short-lived Kata container returning combined output,
 // the container ID (unique sandbox ID), and an error if execution failed or timed out.
 func execInKata(code string) (string, string, error) {
@@ -211,8 +304,9 @@ func execInKata(code string) (string, string, error) {
 		}
 		langDir = filepath.Join(wd, "lang")
 	}
-	if fi, statErr := os.Stat(langDir); statErr != nil || !fi.IsDir() {
-		return "", "", fmt.Errorf("missing lang directory at %s", langDir)
+	langMountSource, err := resolveLangMountSource(langDir)
+	if err != nil {
+		return "", "", err
 	}
 	fmt.Printf("[timing] prep env: %v\n", time.Since(phaseStart))
 	phaseStart = time.Now()
@@ -237,7 +331,7 @@ func execInKata(code string) (string, string, error) {
 		oci.WithHostname("sandbox"),
 		oci.WithMounts([]specs.Mount{
 			{Destination: "/tmp", Type: "tmpfs", Source: "tmpfs", Options: []string{"rw", "nosuid", "nodev", "mode=1777", "size=64m"}},
-			{Type: "bind", Source: langDir, Destination: "/lang", Options: []string{"rbind", "ro"}},
+			{Type: "bind", Source: langMountSource, Destination: "/lang", Options: []string{"rbind", "ro"}},
 		}),
 		oci.WithLinuxNamespace(specs.LinuxNamespace{Type: specs.NetworkNamespace, Path: ""}),
 		oci.WithNoNewPrivileges,
